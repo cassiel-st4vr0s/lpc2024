@@ -3,6 +3,27 @@
 # 2024
 
 import pygame
+import random
+
+AI_ERROR_ODDS = 0.1
+MAX_SPEED_X = 11.5
+MAX_SPEED_Y = 10
+
+# Function to put a limit in ball's speed
+def limit_ball_speed():
+    global ball_dx, ball_dy
+
+    # horizontal speed
+    if ball_dx > MAX_SPEED_X:
+        ball_dx = MAX_SPEED_X
+    elif ball_dx < -MAX_SPEED_X:
+        ball_dx = -MAX_SPEED_X
+    
+    # Vertical Speed
+    if ball_dy > MAX_SPEED_Y:
+        ball_dy = MAX_SPEED_Y
+    elif ball_dy < -MAX_SPEED_Y:
+        ball_dy = -MAX_SPEED_Y
 
 pygame.init()
 
@@ -82,51 +103,73 @@ while game_loop:
 
         # ball collision with the wall
         if ball_y > 700:
-            ball_dy *= -1
+            ball_y = 700
+            ball_dy *= -1.1
             bounce_sound_effect.play()
         elif ball_y <= 0:
-            ball_dy *= -1
+            ball_y = 0
+            ball_dy *= -1.1
             bounce_sound_effect.play()
 
-        # colisão da bola com a raquete do jogador 1
-        if ball_x < 100:  # verifica se a bola está na área da raquete do player 1
-            if player_1_y < ball_y + 25 and player_1_y + 150 > ball_y:  # colisão com a raquete
-                # Inverte a direção horizontal (rebate)
-                ball_dx *= -1
+        # ball collision with p1's paddle
+        if ball_x < 100:  # verify if the ball is in the p1 paddle area
+            if player_1_y < ball_y + 25 and player_1_y + 150 > ball_y:  # paddle collison
+                ball_dx *= -1.1 # Reverses horizontal direction 
                 
-                # Calcula a posição relativa da bola na raquete (entre 0 e 1)
-                relative_position = (ball_y - player_1_y) / 150  # 150 é a altura da raquete
+                # calculates the relative position of the ball
+                relative_position = (ball_y - player_1_y) / 150  # 150 = paddle's height
                 
-                # Ajusta a direção vertical (ball_dy) de acordo com onde a bola atingiu a raquete
-                ball_dy = (relative_position - 1.2) * 10  # Ajusta para valores entre -5 e 5
+                # Adjust the vertical direction (ball_dy) fallowing the collision point
+                ball_dy = (relative_position - 1) * 10
                 
-                # Aumenta a velocidade da bola para dificultar o jogo
-                ball_dx *= 1.17
-                ball_dy *= 1.17
+                # Ball Speed Up
+                ball_dx *= 1.15
+                ball_dy *= 1.15
+
+                # Try to prevent the bug where the ball gets stuck in the paddle      
+                if ball_x < 100:  # collision with P1
+                    ball_x = 100  # Ball go out of the paddle
+
+                limit_ball_speed()
                 
-                # Toca o efeito sonoro de colisão
+                # Sound effect
                 bounce_sound_effect.play()
 
         # ball collision with the player 2 's paddle
         if ball_x > 1160:
-            if player_2_y < ball_y + 25:
-                if player_2_y + 150 > ball_y:
-                    ball_dx *= -1
+            if player_2_y < ball_y + 25 and player_2_y + 150 > ball_y:
+                    ball_dx *= -1.1
+
+                    relative_position = (ball_y - player_2_y) / 150
+
+                    ball_dy = (relative_position -0.7) * 10
+
+                    # Try to prevent the bug where the ball gets stuck in the paddle      
+                    if ball_x > 1160:  # Collision with P2
+                        ball_x = 1160  # Ball go out of the paddle
+
+                    limit_ball_speed()
+
+                    '''
+                    Disabled due to progressive speed up
+                    ball_dx *= 1.1 
+                    ball_dy *= 1.1'''
+
                     bounce_sound_effect.play()
 
         # scoring points
-        if ball_x < -50:
+        if ball_x < -10:
             ball_x = 640
             ball_y = 360
-            ball_dy *= -1
-            ball_dx *= -1
+            ball_dy *= -0.7
+            ball_dx *= -0.7
             score_2 += 1
             scoring_sound_effect.play()
-        elif ball_x > 1320:
+        elif ball_x > 1270:
             ball_x = 640
             ball_y = 360
-            ball_dy *= -1
-            ball_dx *= -1
+            ball_dy *= -0.7
+            ball_dx *= -0.7
             score_1 += 1
             scoring_sound_effect.play()
 
@@ -134,15 +177,17 @@ while game_loop:
         ball_x = ball_x + ball_dx
         ball_y = ball_y + ball_dy
 
+        limit_ball_speed()
+
         # player 1 up movement
         if player_1_move_up:
-            player_1_y -= 20
+            player_1_y -= 16 
         else:
             player_1_y += 0
 
         # player 1 down movement
         if player_1_move_down:
-            player_1_y += 20
+            player_1_y += 16
         else:
             player_1_y += 0
 
@@ -155,15 +200,22 @@ while game_loop:
             player_1_y = 570
 
         # player 2 "Artificial Intelligence"
+        ai_speed = 5.8  # AI speed adjust
 
-        ai_speed = 2
+        # Establishes a fix speed to the AI's paddle fallowing the ball movement
+        if player_2_y + 75 < ball_y:  # Under the paddle's center
+            player_2_y += ai_speed 
+        elif player_2_y + 75 > ball_y:  # Upper the paddle's center
+            player_2_y -= ai_speed 
 
-        if player_2_y + 75 < ball_y:  # Se a bola estiver abaixo do centro da raquete da IA
-            player_2_y += ai_speed
-        if player_2_y + 75 < ball_y:  # Se a bola estiver abaixo do centro da raquete da IA
-            player_2_y += ai_speed
-    
-        player_2_y = ball_y
+        if random.random() < AI_ERROR_ODDS:
+            # Chance of the AI failling
+            if player_2_y + 75 < ball_y:
+                player_2_y += ai_speed // 2  # Slowdown the speed downwards
+            elif player_2_y + 75 > ball_y:
+                player_2_y -= ai_speed // 2  #Slowdown the speed upwards
+   
+        # Makes the P2 paddle "stay" in the screen
         if player_2_y <= 0:
             player_2_y = 0
         elif player_2_y >= 570:
