@@ -1,139 +1,261 @@
 import pygame
 import sys
+import time
+import random
 
-
-# Classe Projectile
-class Projectile:
-    def __init__(self, x, y, direction):
-        self.rect = pygame.Rect(x, y, 10, 10)  # Projétil é um quadrado
-        self.speed = 7
-        self.direction = direction  # 1 = direita, -1 = esquerda
-
-    def update(self):
-        self.rect.x += self.speed * self.direction
-
-    def draw(self, screen):
-        pygame.draw.rect(screen, (255, 255, 0), self.rect)  # Projéteis são amarelos
-
-    def is_off_screen(self, screen_width, screen_height):
-        return (self.rect.right < 0 or self.rect.left > screen_width or
-                self.rect.bottom < 0 or self.rect.top > screen_height)
-
-
-# Classe Tank
-class Tank:
-    def __init__(self, x, y, color, is_player=True):
-        self.rect = pygame.Rect(x, y, 50, 30)  # O tanque é um retângulo
-        self.color = color
-        self.speed = 5
-        self.is_player = is_player
-        self.cooldown = 0
-        self.cooldown_time = 30  # tempo de recarga em frames
-
-    def update(self):
-        if self.cooldown > 0:
-            self.cooldown -= 1
-
-    def move(self, keys):
-        if self.is_player:
-            if keys[pygame.K_LEFT] and self.rect.left > 0:
-                self.rect.x -= self.speed
-            if keys[pygame.K_RIGHT] and self.rect.right < 800:  # largura da tela
-                self.rect.x += self.speed
-            if keys[pygame.K_UP] and self.rect.top > 0:
-                self.rect.y -= self.speed
-            if keys[pygame.K_DOWN] and self.rect.bottom < 600:  # altura da tela
-                self.rect.y += self.speed
-
-    def draw(self, screen):
-        pygame.draw.rect(screen, self.color, self.rect)
-
-    def shoot(self):
-        if self.cooldown == 0:
-            self.cooldown = self.cooldown_time
-            return Projectile(self.rect.centerx, self.rect.centery, 1 if self.is_player else -1)
-        return None
-
-
-# Função para detectar colisões
-def check_collisions(projectiles, player_tank, enemy_tank):
-    for projectile in projectiles[:]:
-        if enemy_tank.rect.colliderect(projectile.rect):
-            print("O tanque inimigo foi atingido!")
-            continue
-
-        if player_tank.rect.colliderect(projectile.rect):
-            print("O tanque do jogador foi atingido!")
-
-
-# Inicialização do Pygame
+# Initialize Pygame
 pygame.init()
 
-# Configurações da tela
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
-screen_size = (SCREEN_WIDTH, SCREEN_HEIGHT)
-screen = pygame.display.set_mode(screen_size)
-pygame.display.set_caption("Tank Game")
+# Screen setup
+SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Battle Tanks")
 
-# Definindo cores
+# Colors
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+BLUE = (0, 0, 255)
+YELLOW = (255, 255, 0)
+GREEN = (0, 255, 0)
 
-# Criando tanques
-player_tank = Tank(100, SCREEN_HEIGHT // 2, WHITE)
-enemy_tank = Tank(SCREEN_WIDTH - 150, SCREEN_HEIGHT // 2, (255, 0, 0))  # Tanque inimigo vermelho
+# Initial positions
+PLAYER_INITIAL_POS = (50, SCREEN_HEIGHT // 2)
+ENEMY_INITIAL_POS = (SCREEN_WIDTH - 100, SCREEN_HEIGHT // 2)
 
-# Taxa de disparo do inimigo
-ENEMY_FIRE_EVENT = pygame.USEREVENT + 2
-pygame.time.set_timer(ENEMY_FIRE_EVENT, 2000)  # 2 segundos
+# Game objects
+player = {
+    "rect": pygame.Rect(PLAYER_INITIAL_POS[0], PLAYER_INITIAL_POS[1], 40, 30),
+    "color": BLUE,
+    "speed": 5,
+    "health": 3,
+    "last_shot_time": 0,
+    "shot_cooldown": 500  # Cooldown in milliseconds
+}
+
+enemy = {
+    "rect": pygame.Rect(ENEMY_INITIAL_POS[0], ENEMY_INITIAL_POS[1], 40, 30),
+    "color": RED,
+    "speed": 0,
+    "fire_rate": 2000,
+    "lifetime": 10000,  # Enemy lifetime in milliseconds (10 seconds)
+    "last_shot_time": 0,
+    "shot_cooldown": 1000  # Cooldown in milliseconds
+}
+
+# Updated barrier design
+barriers = [
+    pygame.Rect(150, SCREEN_HEIGHT // 2 - 100, 40, 200),
+    pygame.Rect(SCREEN_WIDTH - 190, SCREEN_HEIGHT // 2 - 100, 40, 200),
+    pygame.Rect(SCREEN_WIDTH // 2 - 100, 100, 200, 40),
+    pygame.Rect(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 140, 200, 40)
+]
 
 projectiles = []
 
-# Loop principal do jogo
-clock = pygame.time.Clock()
-running = True
+# Game state
+level = 1
+game_over = False
+level_start_time = 0
+level_pause_duration = 3000  # 3 seconds pause between levels
 
-while running:
+
+# Helper functions
+def draw_tank(surface, tank, turret_angle=0):
+    pygame.draw.rect(surface, tank["color"], tank["rect"])
+    turret_length = 20
+    turret_width = 6
+    turret_origin = tank["rect"].center
+    turret_end = (
+        turret_origin[0] + turret_length * pygame.math.Vector2(1, 0).rotate(
+            turret_angle).x,
+        turret_origin[1] + turret_length * pygame.math.Vector2(1, 0).rotate(
+            turret_angle).y
+    )
+    pygame.draw.line(surface, tank["color"], turret_origin, turret_end,
+                     turret_width)
+
+
+def move_player(keys):
+    new_rect = player["rect"].copy()
+    if keys[pygame.K_LEFT]:
+        new_rect.x -= player["speed"]
+    if keys[pygame.K_RIGHT]:
+        new_rect.x += player["speed"]
+    if keys[pygame.K_UP]:
+        new_rect.y -= player["speed"]
+    if keys[pygame.K_DOWN]:
+        new_rect.y += player["speed"]
+
+    new_rect.clamp_ip(pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT))
+
+    if not any(barrier.colliderect(new_rect) for barrier in barriers):
+        player["rect"] = new_rect
+
+
+def move_enemy():
+    if level >= 2:
+        new_rect = enemy["rect"].copy()
+        new_rect.y += enemy["speed"]
+        if new_rect.top <= 0 or new_rect.bottom >= SCREEN_HEIGHT:
+            enemy["speed"] *= -1
+        elif not any(barrier.colliderect(new_rect) for barrier in barriers):
+            enemy["rect"] = new_rect
+
+
+def create_projectile(x, y, direction, speed, color):
+    return {
+        "rect": pygame.Rect(x, y, 6, 6),
+        "direction": direction,
+        "speed": speed,
+        "color": color
+    }
+
+
+def update_projectiles():
+    for proj in projectiles[:]:
+        new_rect = proj["rect"].copy()
+        new_rect.x += proj["direction"][0] * proj["speed"]
+        new_rect.y += proj["direction"][1] * proj["speed"]
+
+        if (new_rect.left <= 0 or new_rect.right >= SCREEN_WIDTH or
+                new_rect.top <= 0 or new_rect.bottom >= SCREEN_HEIGHT or
+                any(barrier.colliderect(new_rect) for barrier in barriers)):
+            projectiles.remove(proj)
+        else:
+            proj["rect"] = new_rect
+
+
+def check_collisions():
+    global game_over, level
+    for proj in projectiles[:]:
+        if proj["color"] == RED and player["rect"].colliderect(proj["rect"]):
+            player["health"] -= 1
+            projectiles.remove(proj)
+            if player["health"] <= 0:
+                game_over = True
+            break
+        elif proj["color"] == BLUE and enemy["rect"].colliderect(proj["rect"]):
+            level_up()
+            projectiles.clear()
+            break
+
+
+def level_up():
+    global level, enemy, level_start_time
+    level += 1
+    level_start_time = pygame.time.get_ticks()
+    if level > 5:
+        print("Congratulations! You've beaten all levels!")
+        pygame.quit()
+        sys.exit()
+
+    # Reset player and enemy positions
+    player["rect"].topleft = PLAYER_INITIAL_POS
+    enemy["rect"].topleft = ENEMY_INITIAL_POS
+
+    enemy["lifetime"] = max(5000, 10000 - (
+                level - 1) * 1000)  # Decrease lifetime each level
+    if level == 2:
+        enemy["speed"] = 2
+    elif level == 3:
+        enemy["fire_rate"] = 1500
+    elif level == 4:
+        enemy["speed"] = 3
+    elif level == 5:
+        enemy["fire_rate"] = 1000
+
+    pygame.time.set_timer(enemy_die_event, enemy["lifetime"])
+
+
+def draw():
+    screen.fill(BLACK)
+
+    # Draw grass texture
+    for y in range(0, SCREEN_HEIGHT, 20):
+        for x in range(0, SCREEN_WIDTH, 20):
+            pygame.draw.rect(screen, (0, 100, 0), (x, y, 20, 20))
+            pygame.draw.rect(screen, (0, 120, 0), (x, y, 18, 18))
+
+    # Draw barriers
+    for barrier in barriers:
+        pygame.draw.rect(screen, (100, 100, 100), barrier)
+        pygame.draw.rect(screen, (150, 150, 150), barrier.inflate(-4, -4))
+
+    # Draw tanks
+    mouse_x, mouse_y = pygame.mouse.get_pos()
+    player_angle = pygame.math.Vector2(mouse_x - player["rect"].centerx,
+                                       mouse_y - player[
+                                           "rect"].centery).angle_to((1, 0))
+    draw_tank(screen, player, player_angle)
+    draw_tank(screen, enemy, 180)
+
+    for proj in projectiles:
+        pygame.draw.rect(screen, proj["color"], proj["rect"])
+
+    font = pygame.font.Font(None, 36)
+    health_text = font.render(f"Health: {player['health']}", True, WHITE)
+    level_text = font.render(f"Level: {level}", True, WHITE)
+    screen.blit(health_text, (10, 10))
+    screen.blit(level_text, (SCREEN_WIDTH - 100, 10))
+
+    current_time = pygame.time.get_ticks()
+    if current_time - level_start_time < level_pause_duration:
+        pause_text = font.render(f"Level {level}", True, WHITE)
+        text_rect = pause_text.get_rect(
+            center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+        screen.blit(pause_text, text_rect)
+
+
+# Game loop
+clock = pygame.time.Clock()
+enemy_fire_event = pygame.USEREVENT + 1
+enemy_die_event = pygame.USEREVENT + 2
+pygame.time.set_timer(enemy_fire_event, enemy["fire_rate"])
+pygame.time.set_timer(enemy_die_event, enemy["lifetime"])
+level_start_time = pygame.time.get_ticks()
+
+while not game_over:
+    current_time = pygame.time.get_ticks()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            running = False
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:  # Botão esquerdo do mouse
-                new_projectile = player_tank.shoot()
-                if new_projectile:
-                    projectiles.append(new_projectile)
-        if event.type == ENEMY_FIRE_EVENT:
-            new_projectile = Projectile(enemy_tank.rect.centerx, enemy_tank.rect.centery, -1)
-            if new_projectile:
-                projectiles.append(new_projectile)
+            pygame.quit()
+            sys.exit()
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if current_time - player["last_shot_time"] >= player[
+                "shot_cooldown"]:
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                dx, dy = mouse_x - player["rect"].centerx, mouse_y - player[
+                    "rect"].centery
+                direction = pygame.math.Vector2(dx, dy).normalize()
+                projectiles.append(create_projectile(player["rect"].centerx,
+                                                     player["rect"].centery,
+                                                     direction, 7, BLUE))
+                player["last_shot_time"] = current_time
+        elif event.type == enemy_fire_event:
+            if current_time - enemy["last_shot_time"] >= enemy[
+                "shot_cooldown"]:
+                direction = pygame.math.Vector2(-1, 0)
+                projectiles.append(create_projectile(enemy["rect"].centerx,
+                                                     enemy["rect"].centery,
+                                                     direction,
+                                                     5 if level > 2 else 3,
+                                                     RED))
+                enemy["last_shot_time"] = current_time
+        elif event.type == enemy_die_event:
+            level_up()
 
-    # Lidar com pressionamento de teclas
-    keys = pygame.key.get_pressed()
-    player_tank.move(keys)
+    if current_time - level_start_time >= level_pause_duration:
+        keys = pygame.key.get_pressed()
+        move_player(keys)
+        move_enemy()
+        update_projectiles()
+        check_collisions()
 
-    # Atualizar objetos do jogo
-    player_tank.update()
-    enemy_tank.update()
-
-    # Atualizar projéteis
-    for projectile in projectiles[:]:
-        projectile.update()
-        if projectile.is_off_screen(SCREEN_WIDTH, SCREEN_HEIGHT):
-            projectiles.remove(projectile)
-
-    # Verificar colisões
-    check_collisions(projectiles, player_tank, enemy_tank)
-
-    # Desenhar na tela
-    screen.fill(BLACK)
-    player_tank.draw(screen)
-    enemy_tank.draw(screen)
-    for projectile in projectiles:
-        projectile.draw(screen)  # Desenhar projéteis que ainda estão ativos
-
+    draw()
     pygame.display.flip()
-    clock.tick(60)  # FPS
+    clock.tick(60)
 
+print("Game Over!")
 pygame.quit()
 sys.exit()
