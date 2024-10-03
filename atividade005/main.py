@@ -1,7 +1,7 @@
 import pygame
 import sys
 from tank import Tank
-
+#from projectile import Projectile
 
 pygame.init()
 
@@ -20,9 +20,10 @@ WHITE = (255, 255, 255)
 player_tank = Tank(100, SCREEN_HEIGHT // 2, WHITE)
 enemy_tank = Tank(SCREEN_WIDTH - 100, SCREEN_HEIGHT // 2, (255, 0, 0)) #enemy is red
 
+projectiles = []
 class Wall:
     def __init__(self, x, y, width, height):
-        self.rect = pygame.Rect(self, x, y, width, height), self.rect
+        self.rect = pygame.Rect(self, x, y, width, height)
 
     def draw(self, screen):
         pygame.draw.rect(screen, (100, 100, 100), self.rect)
@@ -37,16 +38,29 @@ while running:
             running = False
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1: #left mouse button
-                player_tank.shoot()
+                new_projectile = player_tank.shoot()
+                if new_projectile:
+                    projectiles.append(new_projectile)
+
+    #hanndle key press
+    keys = pygame.key.get_pressed()
+    player_tank.move(keys)
 
     #updates(game objetcs)
     player_tank.update()
     enemy_tank.update()
 
+    for projectile in projectiles[:]:
+        projectile.update()
+        if projectile.is_off_screen(SCREEN_WIDTH, SCREEN_HEIGHT):
+            projectiles.remove(projectile)
+
     #draw
     screen.fill(BLACK)
     player_tank.draw(screen)
     enemy_tank.draw(screen)
+    for projectile in projectiles:
+        projectile.draw(screen)
 
     pygame.display.flip()
     clock.tick(60)#fps
