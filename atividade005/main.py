@@ -1,7 +1,7 @@
 import pygame
 import sys
 from tank import Tank
-#from projectile import Projectile
+from projectile import Projectile
 
 pygame.init()
 
@@ -19,6 +19,10 @@ WHITE = (255, 255, 255)
 #tanks(player and ai enemy)
 player_tank = Tank(100, SCREEN_HEIGHT // 2, WHITE)
 enemy_tank = Tank(SCREEN_WIDTH - 100, SCREEN_HEIGHT // 2, (255, 0, 0)) #enemy is red
+
+#enemy tank fire rate
+ENEMY_FIRE_EVENT = pygame.USEREVENT + 2
+pygame.time.set_timer(ENEMY_FIRE_EVENT, 2000)  #2 segundos
 
 projectiles = []
 class Wall:
@@ -41,6 +45,12 @@ while running:
                 new_projectile = player_tank.shoot()
                 if new_projectile:
                     projectiles.append(new_projectile)
+        if event.type == ENEMY_FIRE_EVENT:
+            new_projectile = Projectile(enemy_tank.rect.centerx, enemy_tank.rect.centery, -1)
+            if new_projectile:
+                projectiles.append(new_projectile)
+
+
 
     #hanndle key press
     keys = pygame.key.get_pressed()
