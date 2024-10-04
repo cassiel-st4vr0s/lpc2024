@@ -134,6 +134,7 @@ def check_collisions():
             player["health"] -= 1
             projectiles.remove(proj)
             if player["health"] <= 0:
+                show_defeat_screen()
                 game_over = True
             break
 
@@ -155,7 +156,7 @@ def level_up():
     level_start_time = pygame.time.get_ticks()
 
     if level > 5:
-        print("Congratulations! You've beaten all levels!")
+        show_victory_screen()
         pygame.quit()
         sys.exit()
 
@@ -176,6 +177,40 @@ def level_up():
     # Removes the timer for the enemy death event
     pygame.time.set_timer(enemy_die_event, 0)
 
+def show_victory_screen():
+    screen.fill(BLACK)
+    font = pygame.font.Font(None, 74)
+    defeat_text = font.render("You Won!", True, GREEN)
+    text_rect = defeat_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 20))
+    screen.blit(defeat_text, text_rect)
+
+    pygame.display.flip()
+    wait_for_input()
+
+def show_defeat_screen():
+    screen.fill(BLACK)
+    font = pygame.font.Font(None, 74)
+    defeat_text = font.render("You Lost.", True, RED)
+    text_rect = defeat_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 20))
+    screen.blit(defeat_text, text_rect)
+
+    pygame.display.flip()
+    wait_for_input()
+
+# Função não implementada para aparecer depois do fim do jogo para reiniciar ou sair
+def wait_for_input():
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_r:
+                    #reset_game()
+                    return
+                elif event.key == pygame.K_q:
+                    pygame.quit()
+                    sys.exit()
 
 def draw():
     screen.fill(BLACK)
