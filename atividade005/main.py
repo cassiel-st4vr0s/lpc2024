@@ -127,24 +127,33 @@ def update_projectiles():
 
 
 def check_collisions():
-    global game_over, level
+    global game_over, level_up_called
     for proj in projectiles[:]:
+        # Verifica se o projétil vermelho (inimigo) atinge o jogador
         if proj["color"] == RED and player["rect"].colliderect(proj["rect"]):
             player["health"] -= 1
             projectiles.remove(proj)
             if player["health"] <= 0:
                 game_over = True
             break
+
+        # Checks if the blue projectile (player) hits the enemy
         elif proj["color"] == BLUE and enemy["rect"].colliderect(proj["rect"]):
-            level_up()
-            projectiles.clear()
+            if not level_up_called:
+                print(f"Enemy hit! Leveling up from level {level}.")
+                level_up()
+                level_up_called = True
+            projectiles.remove(proj)
             break
+    else:
+        level_up_called = False  # Reset if no collision occurred
 
 
 def level_up():
     global level, enemy, level_start_time
     level += 1
     level_start_time = pygame.time.get_ticks()
+
     if level > 5:
         print("Congratulations! You've beaten all levels!")
         pygame.quit()
@@ -154,8 +163,7 @@ def level_up():
     player["rect"].topleft = PLAYER_INITIAL_POS
     enemy["rect"].topleft = ENEMY_INITIAL_POS
 
-    enemy["lifetime"] = max(5000, 10000 - (
-                level - 1) * 1000)  # Decrease lifetime each level
+    enemy["lifetime"] = max(5000, 10000 - (level - 1) * 1000)  # Diminui a vida útil a cada nível
     if level == 2:
         enemy["speed"] = 2
     elif level == 3:
@@ -165,7 +173,8 @@ def level_up():
     elif level == 5:
         enemy["fire_rate"] = 1000
 
-    pygame.time.set_timer(enemy_die_event, enemy["lifetime"])
+    # Removes the timer for the enemy death event
+    pygame.time.set_timer(enemy_die_event, 0)
 
 
 def draw():
@@ -212,7 +221,6 @@ clock = pygame.time.Clock()
 enemy_fire_event = pygame.USEREVENT + 1
 enemy_die_event = pygame.USEREVENT + 2
 pygame.time.set_timer(enemy_fire_event, enemy["fire_rate"])
-pygame.time.set_timer(enemy_die_event, enemy["lifetime"])
 level_start_time = pygame.time.get_ticks()
 
 while not game_over:
