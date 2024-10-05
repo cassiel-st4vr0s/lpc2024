@@ -18,6 +18,7 @@ RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
 GREEN = (0, 255, 0)
+NAVY_BLUE = (21,52,72)
 
 # Initial positions
 PLAYER_INITIAL_POS = (50, SCREEN_HEIGHT // 2)
@@ -30,7 +31,8 @@ player = {
     "speed": 5,
     "health": 3,
     "last_shot_time": 0,
-    "shot_cooldown": 500  # Cooldown in milliseconds
+    "shot_cooldown": 500,  # Cooldown in milliseconds
+    "turret_color": NAVY_BLUE
 }
 
 enemy = {
@@ -63,8 +65,8 @@ level_pause_duration = 3000  # 3 seconds pause between levels
 # Helper functions
 def draw_tank(surface, tank, turret_angle=0):
     pygame.draw.rect(surface, tank["color"], tank["rect"])
-    turret_length = 20
-    turret_width = 6
+    turret_length = 30
+    turret_width = 8
     turret_origin = tank["rect"].center
     turret_end = (
         turret_origin[0] + turret_length * pygame.math.Vector2(1, 0).rotate(
@@ -72,7 +74,8 @@ def draw_tank(surface, tank, turret_angle=0):
         turret_origin[1] + turret_length * pygame.math.Vector2(1, 0).rotate(
             turret_angle).y
     )
-    pygame.draw.line(surface, tank["color"], turret_origin, turret_end,
+    turret_color = tank.get("turret_color", tank["color"])
+    pygame.draw.line(surface, turret_color, turret_origin, turret_end,
                      turret_width)
 
 
@@ -275,6 +278,7 @@ while not game_over:
                                                      player["rect"].centery,
                                                      direction, 7, BLUE))
                 player["last_shot_time"] = current_time
+                player["turret_color"] = RED # turret color turns red afetr shoot
         elif event.type == enemy_fire_event:
             if current_time - enemy["last_shot_time"] >= enemy[
                 "shot_cooldown"]:
@@ -287,6 +291,9 @@ while not game_over:
                 enemy["last_shot_time"] = current_time
         elif event.type == enemy_die_event:
             level_up()
+    
+    if current_time - player["last_shot_time"] >= player["shot_cooldown"]:
+        player["turret_color"] = NAVY_BLUE
 
     if current_time - level_start_time >= level_pause_duration:
         keys = pygame.key.get_pressed()
