@@ -180,22 +180,32 @@ def level_up():
     # Removes the timer for the enemy death event
     pygame.time.set_timer(enemy_die_event, 0)
 
+
 def show_victory_screen():
     screen.fill(BLACK)
     font = pygame.font.Font(None, 74)
-    defeat_text = font.render("You Won!", True, GREEN)
-    text_rect = defeat_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 20))
-    screen.blit(defeat_text, text_rect)
+    victory_text = font.render("You Won!", True, GREEN)
+    text_rect = victory_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 20))
+    instructions_text = font.render("Press R to Restart or Q to Quit", True, WHITE)
+    instructions_rect = instructions_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 40))
+
+    screen.blit(victory_text, text_rect)
+    screen.blit(instructions_text, instructions_rect)
 
     pygame.display.flip()
     wait_for_input()
+
 
 def show_defeat_screen():
     screen.fill(BLACK)
     font = pygame.font.Font(None, 74)
     defeat_text = font.render("You Lost.", True, RED)
     text_rect = defeat_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 20))
+    instructions_text = font.render("Press R to Restart or Q to Quit", True, WHITE)
+    instructions_rect = instructions_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 40))
+
     screen.blit(defeat_text, text_rect)
+    screen.blit(instructions_text, instructions_rect)
 
     pygame.display.flip()
     wait_for_input()
@@ -254,6 +264,40 @@ def draw():
         screen.blit(pause_text, text_rect)
 
 
+def show_start_screen():
+    screen.fill(BLACK)
+    font = pygame.font.Font(None, 74)
+    title_text = font.render("Battle Tanks", True, WHITE)
+    title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 40))
+
+    instructions_text = font.render("Press Enter to Start", True, WHITE)
+    instructions_rect = instructions_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20))
+
+    screen.blit(title_text, title_rect)
+    screen.blit(instructions_text, instructions_rect)
+
+    pygame.display.flip()
+
+    # Wait for the player to press Enter to start the game
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:  # Start the game on Enter
+                    waiting = False
+
+# Game loop
+show_start_screen()
+clock = pygame.time.Clock()
+enemy_fire_event = pygame.USEREVENT + 1
+enemy_die_event = pygame.USEREVENT + 2
+pygame.time.set_timer(enemy_fire_event, enemy["fire_rate"])
+level_start_time = pygame.time.get_ticks()
+
+
 # Game loop
 clock = pygame.time.Clock()
 enemy_fire_event = pygame.USEREVENT + 1
@@ -291,7 +335,7 @@ while not game_over:
                 enemy["last_shot_time"] = current_time
         elif event.type == enemy_die_event:
             level_up()
-    
+
     if current_time - player["last_shot_time"] >= player["shot_cooldown"]:
         player["turret_color"] = NAVY_BLUE
 
