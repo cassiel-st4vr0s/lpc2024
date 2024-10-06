@@ -1,9 +1,11 @@
 import pygame
 import sys
 import random
+import os
 
 # Initialize Pygame
 pygame.init()
+pygame.mixer.init()
 
 # Screen setup
 SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
@@ -23,22 +25,17 @@ NAVY_BLUE = (21, 52, 72)
 PLAYER1_INITIAL_POS = (50, SCREEN_HEIGHT // 2)
 PLAYER2_INITIAL_POS = (SCREEN_WIDTH - 100, SCREEN_HEIGHT // 2)
 
-soundtrack_list =\
-["SOUNDTRACKS/Castlevania II Music (NES) - Bloody Tears (Day Theme) - ",
-"explod2A03.mp3",
-"SOUNDTRACKS/phoenixwright.mp3"
- ]
-
-soundtrack_selection = random.choice(soundtrack_list)
-soundtrack = pygame.mixer.Sound(soundtrack_selection)
-
-soundtrack.set_volume(0.3)
-soundtrack.play()
+# Sound setup (keeping this part for future use if needed)
+soundtracks_dir = os.path.join(os.getcwd(), "SOUNDTRACKS")
+soundtrack_list = [
+    os.path.join(soundtracks_dir, "Castlevania II Music (NES) - Bloody Tears (Day Theme).wav"),
+    os.path.join(soundtracks_dir, "explod2A03.wav"),
+    os.path.join(soundtracks_dir, "phoenixwright.wav")
+]
 
 # Game objects
 player1 = {
-    "rect": pygame.Rect(PLAYER1_INITIAL_POS[0], PLAYER1_INITIAL_POS[1], 40,
-                        30),
+    "rect": pygame.Rect(PLAYER1_INITIAL_POS[0], PLAYER1_INITIAL_POS[1], 40, 30),
     "color": BLUE,
     "speed": 5,
     "score": 0,
@@ -49,8 +46,7 @@ player1 = {
 }
 
 player2 = {
-    "rect": pygame.Rect(PLAYER2_INITIAL_POS[0], PLAYER2_INITIAL_POS[1], 40,
-                        30),
+    "rect": pygame.Rect(PLAYER2_INITIAL_POS[0], PLAYER2_INITIAL_POS[1], 40, 30),
     "color": RED,
     "speed": 5,
     "score": 0,
@@ -60,19 +56,10 @@ player2 = {
     "direction": pygame.math.Vector2(-1, 0)
 }
 
-# Updated barrier design
-barriers = [
-    pygame.Rect(150, SCREEN_HEIGHT // 2 - 100, 40, 200),
-    pygame.Rect(SCREEN_WIDTH - 190, SCREEN_HEIGHT // 2 - 100, 40, 200),
-    pygame.Rect(SCREEN_WIDTH // 2 - 100, 100, 200, 40),
-    pygame.Rect(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 140, 200, 40)
-]
-
 projectiles = []
 
 # Game state
 MAX_SCORE = 5  # Game ends when a player reaches this score
-
 
 # Helper functions
 def draw_tank(surface, tank):
@@ -84,9 +71,7 @@ def draw_tank(surface, tank):
         turret_origin[0] + turret_length * tank["direction"].x,
         turret_origin[1] + turret_length * tank["direction"].y
     )
-    pygame.draw.line(surface, tank["turret_color"], turret_origin, turret_end,
-                     turret_width)
-
+    pygame.draw.line(surface, tank["turret_color"], turret_origin, turret_end, turret_width)
 
 def move_player(player, keys, up, down, left, right):
     new_rect = player["rect"].copy()
@@ -106,13 +91,10 @@ def move_player(player, keys, up, down, left, right):
         new_direction.y = 1
 
     new_rect.clamp_ip(pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT))
-
-    if not any(barrier.colliderect(new_rect) for barrier in barriers):
-        player["rect"] = new_rect
+    player["rect"] = new_rect
 
     if new_direction.length() > 0:
         player["direction"] = new_direction.normalize()
-
 
 def create_projectile(x, y, direction, speed, color):
     return {
@@ -122,33 +104,25 @@ def create_projectile(x, y, direction, speed, color):
         "color": color
     }
 
-
 def update_projectiles():
     for proj in projectiles[:]:
-        new_rect = proj["rect"].copy()
-        new_rect.x += proj["direction"].x * proj["speed"]
-        new_rect.y += proj["direction"].y * proj["speed"]
+        proj["rect"].x += proj["direction"].x * proj["speed"]
+        proj["rect"].y += proj["direction"].y * proj["speed"]
 
-        if (new_rect.left <= 0 or new_rect.right >= SCREEN_WIDTH or
-                new_rect.top <= 0 or new_rect.bottom >= SCREEN_HEIGHT or
-                any(barrier.colliderect(new_rect) for barrier in barriers)):
+        if (proj["rect"].left <= 0 or proj["rect"].right >= SCREEN_WIDTH or
+                proj["rect"].top <= 0 or proj["rect"].bottom >= SCREEN_HEIGHT):
             projectiles.remove(proj)
-        else:
-            proj["rect"] = new_rect
-
 
 def check_collisions():
     for proj in projectiles[:]:
-        if player1["rect"].colliderect(proj["rect"]) and proj["color"] != \
-                player1["color"]:
+        if player1["rect"].colliderect(proj["rect"]) and proj["color"] != player1["color"]:
             player2["score"] += 1
             projectiles.remove(proj)
             respawn_player(player1)
             if player2["score"] >= MAX_SCORE:
                 return "Player 2 Wins!"
             break
-        elif player2["rect"].colliderect(proj["rect"]) and proj["color"] != \
-                player2["color"]:
+        elif player2["rect"].colliderect(proj["rect"]) and proj["color"] != player2["color"]:
             player1["score"] += 1
             projectiles.remove(proj)
             respawn_player(player2)
@@ -156,7 +130,6 @@ def check_collisions():
                 return "Player 1 Wins!"
             break
     return None
-
 
 def respawn_player(player):
     if player == player1:
@@ -166,23 +139,18 @@ def respawn_player(player):
         player["rect"].topleft = PLAYER2_INITIAL_POS
         player["direction"] = pygame.math.Vector2(-1, 0)
 
-
 def show_game_over_screen(message):
     screen.fill(BLACK)
     font = pygame.font.Font(None, 74)
     game_over_text = font.render(message, True, WHITE)
-    text_rect = game_over_text.get_rect(
-        center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 20))
-    instructions_text = font.render("Press R to Restart or Q to Quit", True,
-                                    WHITE)
-    instructions_rect = instructions_text.get_rect(
-        center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 40))
+    text_rect = game_over_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 20))
+    instructions_text = font.render("Press R to Restart or Q to Quit", True, WHITE)
+    instructions_rect = instructions_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 40))
 
     screen.blit(game_over_text, text_rect)
     screen.blit(instructions_text, instructions_rect)
 
     pygame.display.flip()
-
 
 def reset_game():
     global player1, player2, projectiles
@@ -194,7 +162,6 @@ def reset_game():
     player2["direction"] = pygame.math.Vector2(-1, 0)
     projectiles.clear()
 
-
 def draw():
     screen.fill(BLACK)
 
@@ -203,11 +170,6 @@ def draw():
         for x in range(0, SCREEN_WIDTH, 20):
             pygame.draw.rect(screen, (0, 100, 0), (x, y, 20, 20))
             pygame.draw.rect(screen, (0, 120, 0), (x, y, 18, 18))
-
-    # Draw barriers
-    for barrier in barriers:
-        pygame.draw.rect(screen, (100, 100, 100), barrier)
-        pygame.draw.rect(screen, (150, 150, 150), barrier.inflate(-4, -4))
 
     # Draw tanks
     draw_tank(screen, player1)
@@ -222,27 +184,20 @@ def draw():
     screen.blit(score_text1, (10, 10))
     screen.blit(score_text2, (SCREEN_WIDTH - 200, 10))
 
-
 def show_start_screen():
     screen.fill(BLACK)
 
     font = pygame.font.Font(None, 74)
     title_text = font.render("Battle Tanks Multiplayer", True, WHITE)
-    title_rect = title_text.get_rect(
-        center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 40))
+    title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 40))
 
     instructions_text = font.render("Press Enter to Start", True, WHITE)
-    instructions_rect = instructions_text.get_rect(
-        center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20))
+    instructions_rect = instructions_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20))
 
-    controls_text1 = pygame.font.Font(None, 36).render(
-        "P1: WASD to move, SPACE to shoot", True, WHITE)
-    controls_text2 = pygame.font.Font(None, 36).render(
-        "P2: Arrow keys to move, ENTER to shoot", True, WHITE)
-    controls_rect1 = controls_text1.get_rect(
-        center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 80))
-    controls_rect2 = controls_text2.get_rect(
-        center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 120))
+    controls_text1 = pygame.font.Font(None, 36).render("P1: WASD to move, SPACE to shoot", True, WHITE)
+    controls_text2 = pygame.font.Font(None, 36).render("P2: Arrow keys to move, ENTER to shoot", True, WHITE)
+    controls_rect1 = controls_text1.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 80))
+    controls_rect2 = controls_text2.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 120))
 
     screen.blit(title_text, title_rect)
     screen.blit(instructions_text, instructions_rect)
@@ -261,7 +216,6 @@ def show_start_screen():
                 if event.key == pygame.K_RETURN:
                     waiting = False
 
-
 # Main game loop
 def main_game_loop():
     clock = pygame.time.Clock()
@@ -275,36 +229,24 @@ def main_game_loop():
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    if current_time - player1["last_shot_time"] >= player1[
-                        "shot_cooldown"]:
-                        projectiles.append(
-                            create_projectile(player1["rect"].centerx,
-                                              player1["rect"].centery,
-                                              player1["direction"], 7, BLUE))
+                    if current_time - player1["last_shot_time"] >= player1["shot_cooldown"]:
+                        projectiles.append(create_projectile(player1["rect"].centerx, player1["rect"].centery, player1["direction"], 7, BLUE))
                         player1["last_shot_time"] = current_time
                         player1["turret_color"] = RED
                 elif event.key == pygame.K_RETURN:
-                    if current_time - player2["last_shot_time"] >= player2[
-                        "shot_cooldown"]:
-                        projectiles.append(
-                            create_projectile(player2["rect"].centerx,
-                                              player2["rect"].centery,
-                                              player2["direction"], 7, RED))
+                    if current_time - player2["last_shot_time"] >= player2["shot_cooldown"]:
+                        projectiles.append(create_projectile(player2["rect"].centerx, player2["rect"].centery, player2["direction"], 7, RED))
                         player2["last_shot_time"] = current_time
                         player2["turret_color"] = YELLOW
 
-        if current_time - player1["last_shot_time"] >= player1[
-            "shot_cooldown"]:
+        if current_time - player1["last_shot_time"] >= player1["shot_cooldown"]:
             player1["turret_color"] = NAVY_BLUE
-        if current_time - player2["last_shot_time"] >= player2[
-            "shot_cooldown"]:
+        if current_time - player2["last_shot_time"] >= player2["shot_cooldown"]:
             player2["turret_color"] = YELLOW
 
         keys = pygame.key.get_pressed()
-        move_player(player1, keys, pygame.K_w, pygame.K_s, pygame.K_a,
-                    pygame.K_d)
-        move_player(player2, keys, pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT,
-                    pygame.K_RIGHT)
+        move_player(player1, keys, pygame.K_w, pygame.K_s, pygame.K_a, pygame.K_d)
+        move_player(player2, keys, pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT)
         update_projectiles()
 
         game_over_message = check_collisions()
@@ -327,7 +269,6 @@ def main_game_loop():
         draw()
         pygame.display.flip()
         clock.tick(60)
-
 
 # Run the game
 show_start_screen()
