@@ -266,6 +266,21 @@ def draw():
 
 def show_start_screen():
     screen.fill(BLACK)
+
+    #png das setas
+    start_image = pygame.image.load("assets/setas.png")
+    start_image = pygame.transform.scale(start_image, (100, 100))
+    image_rect = start_image.get_rect(topleft=(10, SCREEN_HEIGHT - 10 - start_image.get_height()))
+    screen.blit(start_image, image_rect)
+
+    # Movimentação
+    font = pygame.font.Font(None, 36)  # Fonte para o texto
+    movement_text = font.render("Movimentação", True, WHITE)
+    text_rect = movement_text.get_rect(center=(image_rect.centerx + 30, image_rect.top - 20))
+
+
+    screen.blit(movement_text, text_rect)
+
     font = pygame.font.Font(None, 74)
     title_text = font.render("Battle Tanks", True, WHITE)
     title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 40))
