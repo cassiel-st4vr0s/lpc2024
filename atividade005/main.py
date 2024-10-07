@@ -8,8 +8,14 @@ pygame.init()
 pygame.mixer.init()
 
 # load audios
+menu_music = pygame.mixer.Sound("SOUNDTRACKS/Castlevania II Music (NES) - Bloody Tears (Day Theme) - explod2A03.mp3")
+gameplay_music = pygame.mixer.Sound("SOUNDTRACKS/phoenixwright_[cut_89sec].mp3")
+gameplay_music.set_volume(0.4)
 explosion_sound = pygame.mixer.Sound("assets/áudios/explosão.mp3")
 bounce_sound_effect = pygame.mixer.Sound("assets/áudios/bounce.wav")
+bounce_sound_effect.set_volume(0.2)
+game_over_sound = pygame.mixer.Sound("SOUNDTRACKS/Victory Sound Effect.mp3")
+game_over_sound.set_volume(0.5)
 
 # screen setup
 SCREEN_WIDTH, SCREEN_HEIGHT = 1200, 600
@@ -250,6 +256,7 @@ def update_projectiles():
 
 def show_game_over_screen(message):
     screen.fill(BLACK)
+    game_over_sound.play()
     font = pygame.font.Font(None, 74)
     game_over_text = font.render(message, True, WHITE)
     text_rect = game_over_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 20))
@@ -264,6 +271,7 @@ def show_game_over_screen(message):
 
 def reset_game():
     global player1, player2, projectiles
+    gameplay_music.play()
     player1["rect"].topleft = PLAYER1_INITIAL_POS
     player2["rect"].topleft = PLAYER2_INITIAL_POS
     player1["score"] = 0
@@ -275,6 +283,7 @@ def reset_game():
 
 def show_start_screen():
     screen.fill(BLACK)
+    menu_music.play()
 
     font = pygame.font.Font(None, 74)
     title_text = font.render("Battle Tanks Multiplayer", True, WHITE)
@@ -304,6 +313,8 @@ def show_start_screen():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN:
                     waiting = False
+                    menu_music.stop()
+                    gameplay_music.play(-1)
 
 
 # modified check_collisions function to include obstacles
@@ -471,6 +482,7 @@ def main_game_loop():
         game_over_message = check_collisions()
         if game_over_message:
             show_game_over_screen(game_over_message)
+            gameplay_music.stop()
             waiting_for_restart = True
             while waiting_for_restart:
                 for event in pygame.event.get():
