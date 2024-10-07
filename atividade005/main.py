@@ -3,16 +3,16 @@ import sys
 import random
 import os
 
-# Initialize Pygame
+# initialize Pygame
 pygame.init()
 pygame.mixer.init()
 
-# Screen setup
+# screen setup
 SCREEN_WIDTH, SCREEN_HEIGHT = 1200, 600
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Battle Tanks Multiplayer")
 
-# Colors
+# colors
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
@@ -27,11 +27,11 @@ PURPLE = (114, 9, 183)
 LIGHT_PURPLE = (181, 23, 158)
 PINK = (247, 37, 133)
 
-# Initial positions
+# initial positions
 PLAYER1_INITIAL_POS = (50, SCREEN_HEIGHT // 2)
 PLAYER2_INITIAL_POS = (SCREEN_WIDTH - 100, SCREEN_HEIGHT // 2)
 
-# Game objects
+# game objects
 player1 = {
     "rect": pygame.Rect(PLAYER1_INITIAL_POS[0], PLAYER1_INITIAL_POS[1], 40,
                         30),
@@ -62,15 +62,15 @@ obstacles = []
 # Game state
 MAX_SCORE = 5
 
-# Obstacle Class for dynamic behaviors
+# obstacle class for dynamic behaviors
 class Obstacle:
     def __init__(self, rect, color, effect=None, move_direction=None, speed=2, is_circle=False):
         self.rect = rect
         self.color = color
-        self.effect = effect  # Efeito no projétil ("increase", "decrease", ou None)
-        self.move_direction = move_direction  # "horizontal" ou "vertical"
+        self.effect = effect  # effect on the projectile ("increase", "decrease", or None)
+        self.move_direction = move_direction  # "horizontal" or "vertical"
         self.speed = speed
-        self.is_circle = is_circle  # Se for True, o obstáculo será desenhado como um círculo
+        self.is_circle = is_circle  # if True, the obstacle will be a circle
 
     def move(self):
         central_area_x_min = SCREEN_WIDTH // 4
@@ -78,93 +78,93 @@ class Obstacle:
 
         if self.move_direction == "horizontal":
             self.rect.x += self.speed
-            # Limitar o movimento dentro da área central
+            # limit the movement inside the central area
             if self.rect.right > central_area_x_max or self.rect.left < central_area_x_min:
                 self.speed = -self.speed
         elif self.move_direction == "vertical":
             self.rect.y += self.speed
-            # Limitar o movimento vertical nas bordas da tela
+            # limit the moviment on the edges of the screen
             if self.rect.bottom > SCREEN_HEIGHT or self.rect.top < 0:
                 self.speed = -self.speed
 
     def apply_effect(self, projectile):
         if self.effect == "increase":
-            projectile["speed"] = min(projectile["speed"] + 2, 15)  # Increase speed with a max cap
+            projectile["speed"] = min(projectile["speed"] + 2, 15)  # increase speed with a max cap
         elif self.effect == "decrease":
-            projectile["speed"] = max(projectile["speed"] - 2, 3)  # Decrease speed with a min cap
+            projectile["speed"] = max(projectile["speed"] - 2, 3)  # decrease speed with a min cap
 
 
 def generate_obstacles():
     obstacles.clear()
     
-    # Definir os limites da área central (área onde os obstáculos podem aparecer)
+    # define the limits of the central area (area where obstacles can appear)
     central_area_x_min = SCREEN_WIDTH // 4
     central_area_x_max = 3 * SCREEN_WIDTH // 4
 
-    # Gerar múltiplos obstáculos normais
-    for _ in range(2):  # Número de Light Blue e Purple
-        # Light Blue (aumenta velocidade) - Obstáculo fixo
+    # generate multiple normal obstacles
+    for _ in range(2):  # numbers of light blue and purple
+        # light Blue (increases speed) - fixed obstacle
         width, height = 100, 50
         x = random.randint(central_area_x_min, central_area_x_max - width)
         y = random.randint(0, SCREEN_HEIGHT - height)
         obstacles.append(Obstacle(pygame.Rect(x, y, width, height), LIGHT_BLUE, effect="increase"))
 
-        # Purple (diminui velocidade) - Obstáculo fixo
+        # purple (decreases speed) - fixed obstacle
         size = 50
         x = random.randint(central_area_x_min, central_area_x_max - size)
         y = random.randint(0, SCREEN_HEIGHT - size)
         obstacles.append(Obstacle(pygame.Rect(x, y, size, size), PURPLE, effect="decrease"))
 
-    # Gerar múltiplos obstáculos dinâmicos (movimentação)
-    for _ in range(2):  # Número de Light Purple e Pink
-        # Light Purple (se move horizontalmente)
+    # generate multiple dynamic obstacles (movement)
+    for _ in range(2):  # numbers of light purple and pink
+        # light Purple (moves horizontally)
         width, height = 120, 20
         x = random.randint(central_area_x_min, central_area_x_max - width)
         y = random.randint(0, SCREEN_HEIGHT - height)
         obstacles.append(Obstacle(pygame.Rect(x, y, width, height), LIGHT_PURPLE, move_direction="horizontal", speed=3))
 
-        # Pink (se move verticalmente)
+        # pink (moves vertically)
         width, height = 20, 120
         x = random.randint(central_area_x_min, central_area_x_max - width)
         y = random.randint(0, SCREEN_HEIGHT - height)
         obstacles.append(Obstacle(pygame.Rect(x, y, width, height), PINK, move_direction="vertical", speed=3))
 
-    # Gerar 1 ou 2 black holes (buracos negros)
+    # generate 1 or 2 black holes
     for _ in range(random.randint(1, 2)):
-        size = random.randint(40, 60)  # Tamanho do círculo
+        size = random.randint(40, 60)  # size of the circle
         x = random.randint(central_area_x_min, central_area_x_max - size)
         y = random.randint(0, SCREEN_HEIGHT - size)
         obstacles.append(Obstacle(pygame.Rect(x, y, size, size), BLACK, is_circle=True))  # Buraco negro é circular
 
 
-# Modified draw function to include dynamic obstacles and black holes
+# modified draw function to include dynamic obstacles and black holes
 def draw():
     screen.fill(BLACK)
 
-    # Draw grass texture
+    # draw grass texture
     for y in range(0, SCREEN_HEIGHT, 20):
         for x in range(0, SCREEN_WIDTH, 20):
             pygame.draw.rect(screen, (0, 100, 0), (x, y, 20, 20))
             pygame.draw.rect(screen, (0, 120, 0), (x, y, 18, 18))
 
-    # Draw obstacles
+    # draw obstacles
     for obstacle in obstacles:
         if obstacle.is_circle:
-            # Desenhar buraco negro como círculo
+            # draw black hole as circle
             pygame.draw.circle(screen, obstacle.color, obstacle.rect.center, obstacle.rect.width // 2)
         else:
-            # Desenhar os outros obstáculos como retângulos
+            # draw the other obstacles as rectangles
             pygame.draw.rect(screen, obstacle.color, obstacle.rect)
 
-    # Draw tanks
+    # draw tanks
     draw_tank(screen, player1)
     draw_tank(screen, player2)
 
-    # Draw projectiles
+    # draw projectiles
     for proj in projectiles:
         pygame.draw.rect(screen, proj["color"], proj["rect"])
 
-    # Display scores
+    # display scores
     font = pygame.font.Font(None, 36)
     score_text1 = font.render(f"P1 Score: {player1['score']}", True, WHITE)
     score_text2 = font.render(f"P2 Score: {player2['score']}", True, WHITE)
@@ -200,42 +200,42 @@ def create_projectile(x, y, direction, speed, color):
     }
 
 
-# Update projectiles with obstacle effects
+# update projectiles with obstacle effects
 def update_projectiles():
     for proj in projectiles[:]:
         proj["rect"].x += proj["direction"].x * proj["speed"]
         proj["rect"].y += proj["direction"].y * proj["speed"]
 
-        # Verificar colisões com as bordas do mapa
+        # check for collisions with map edges
         if proj["rect"].left <= 0 or proj["rect"].right >= SCREEN_WIDTH:
             proj["direction"].x *= -1  # Ricochetear nas bordas horizontais
         if proj["rect"].top <= 0 or proj["rect"].bottom >= SCREEN_HEIGHT:
             proj["direction"].y *= -1  # Ricochetear nas bordas verticais
 
-        # Verificar colisões com obstáculos
+        # check for collisions with obstacles
         for obstacle in obstacles:
             if proj["rect"].colliderect(obstacle.rect):
                 if obstacle.is_circle and obstacle.color == BLACK:
-                    # Se for um buraco negro, o projétil desaparece
+                    # if it's a black hole, the projectile disappears
                     projectiles.remove(proj)
                     break
 
-                # Aplicar efeito de velocidade conforme o tipo de obstáculo
+                # apply speed effect depending on the type of obstacle
                 obstacle.apply_effect(proj)
 
-                # Ricochetear nos obstáculos
-                if not obstacle.is_circle:  # Somente ricochetear se não for buraco negro
+                # ricochet off obstacles
+                if not obstacle.is_circle:  # only ricochet if it's not a black hole
                     if proj["rect"].centerx < obstacle.rect.left:
-                        proj["direction"].x = abs(proj["direction"].x)  # Rebote para a direita
+                        proj["direction"].x = abs(proj["direction"].x)  # rebound to the right
                     elif proj["rect"].centerx > obstacle.rect.right:
-                        proj["direction"].x = -abs(proj["direction"].x)  # Rebote para a esquerda
+                        proj["direction"].x = -abs(proj["direction"].x)  # rebound to the left
                     if proj["rect"].centery < obstacle.rect.top:
-                        proj["direction"].y = abs(proj["direction"].y)  # Rebote para baixo
+                        proj["direction"].y = abs(proj["direction"].y)  # rebound down
                     elif proj["rect"].centery > obstacle.rect.bottom:
-                        proj["direction"].y = -abs(proj["direction"].y)  # Rebote para cima
+                        proj["direction"].y = -abs(proj["direction"].y)  # rebound up
 
                 break
-  # Sair do loop após o ricochete
+  # exit loop after ricochet
 
 
 def show_game_over_screen(message):
@@ -296,7 +296,7 @@ def show_start_screen():
                     waiting = False
 
 
-# Modified check_collisions function to include obstacles
+# modified check_collisions function to include obstacles
 def check_collisions():
     for proj in projectiles[:]:
         # Verificar se o projétil colide com o player 1
@@ -309,7 +309,7 @@ def check_collisions():
             if player2["score"] >= MAX_SCORE:
                 return "Player 2 Wins!"
             break
-        # Verificar se o projétil colide com o player 2
+        # check if the projectile collides with player 2
         elif player2["rect"].colliderect(proj["rect"]) and proj["color"] != player2["color"]:
             player1["score"] += 1
             projectiles.remove(proj)
@@ -320,26 +320,26 @@ def check_collisions():
                 return "Player 1 Wins!"
             break
 
-        # Verificar colisões com obstáculos
+        # check for collisions with obstacles
         for obstacle in obstacles:
             if proj["rect"].colliderect(obstacle.rect):
-                # Aplicar o efeito de velocidade do obstáculo
+                # apply the obstacle speed effect
                 obstacle.apply_effect(proj)
 
-                # Ricochetear nos obstáculos
+                # ricochet off obstacles
                 if proj["rect"].right > obstacle.rect.left and proj["rect"].left < obstacle.rect.left:
-                    proj["direction"].x *= -1  # Ricochetear horizontalmente
+                    proj["direction"].x *= -1  # ricochet horizontally
                 elif proj["rect"].left < obstacle.rect.right and proj["rect"].right > obstacle.rect.right:
-                    proj["direction"].x *= -1  # Ricochetear horizontalmente
+                    proj["direction"].x *= -1  # ricochet horizontally
                 if proj["rect"].bottom > obstacle.rect.top and proj["rect"].top < obstacle.rect.top:
-                    proj["direction"].y *= -1  # Ricochetear verticalmente
+                    proj["direction"].y *= -1  # ricochet vertically
                 elif proj["rect"].top < obstacle.rect.bottom and proj["rect"].bottom > obstacle.rect.bottom:
-                    proj["direction"].y *= -1  # Ricochetear verticalmente
+                    proj["direction"].y *= -1  # ricochet vertically
 
-                break  # Sair do loop após o ricochete
+                break  # exit loop after ricochet
 
 
-# New function for countdown
+# new function for countdown
 def countdown():
     font = pygame.font.Font(None, 74)
     for i in range(3, 0, -1):
@@ -352,7 +352,7 @@ def countdown():
         pygame.time.wait(1000)
 
 
-# Modified respawn function to respawn both players
+# modified respawn function to respawn both players
 def respawn_players():
     player1["rect"].topleft = PLAYER1_INITIAL_POS
     player2["rect"].topleft = PLAYER2_INITIAL_POS
@@ -361,7 +361,7 @@ def respawn_players():
     projectiles.clear()
 
 
-# Modified move_player function to include obstacle collision
+# modified move_player function to include obstacle collision
 def move_player(player, keys, up, down, left, right):
     new_rect = player["rect"].copy()
     new_direction = pygame.math.Vector2(0, 0)
@@ -379,7 +379,7 @@ def move_player(player, keys, up, down, left, right):
         new_rect.y += player["speed"]
         new_direction.y = 1
 
-    # Limit movement to the nearest line
+    # limit movement to the nearest line
     if player == player1:
         new_rect.x = min(new_rect.x, SCREEN_WIDTH // 4 - player["rect"].width)
     elif player == player2:
@@ -387,7 +387,7 @@ def move_player(player, keys, up, down, left, right):
 
     new_rect.clamp_ip(pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT))
 
-    # Check collision with obstacles
+    # check collision with obstacles
     for obstacle in obstacles:
         if new_rect.colliderect(obstacle):
             new_rect = player["rect"].copy()
@@ -399,7 +399,7 @@ def move_player(player, keys, up, down, left, right):
         player["direction"] = new_direction.normalize()
 
 
-# Main game loop (with minor modifications)
+# main game loop (with minor modifications)
 def main_game_loop():
     clock = pygame.time.Clock()
     generate_obstacles()
@@ -444,7 +444,7 @@ def main_game_loop():
                     pygame.K_RIGHT)
         update_projectiles()
 
-        # Move dynamic obstacles
+        # move dynamic obstacles
         for obstacle in obstacles:
             obstacle.move()
 
@@ -474,6 +474,6 @@ def main_game_loop():
         pygame.display.flip()
         clock.tick(60)
 
-# Run the game
+# run the game
 show_start_screen()
 main_game_loop()
