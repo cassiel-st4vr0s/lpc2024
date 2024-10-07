@@ -64,12 +64,13 @@ MAX_SCORE = 5
 
 # Obstacle Class for dynamic behaviors
 class Obstacle:
-    def __init__(self, rect, color, effect=None, move_direction=None, speed=2):
+    def __init__(self, rect, color, effect=None, move_direction=None, speed=2, is_circle=False):
         self.rect = rect
         self.color = color
         self.effect = effect  # Efeito no projétil ("increase", "decrease", ou None)
         self.move_direction = move_direction  # "horizontal" ou "vertical"
         self.speed = speed
+        self.is_circle = is_circle  # Se for True, o obstáculo será desenhado como um círculo
 
     def move(self):
         central_area_x_min = SCREEN_WIDTH // 4
@@ -86,7 +87,6 @@ class Obstacle:
             if self.rect.bottom > SCREEN_HEIGHT or self.rect.top < 0:
                 self.speed = -self.speed
 
-
     def apply_effect(self, projectile):
         if self.effect == "increase":
             projectile["speed"] = min(projectile["speed"] + 2, 15)  # Increase speed with a max cap
@@ -101,7 +101,7 @@ def generate_obstacles():
     central_area_x_min = SCREEN_WIDTH // 4
     central_area_x_max = 3 * SCREEN_WIDTH // 4
 
-    # Gerar múltiplos obstáculos
+    # Gerar múltiplos obstáculos normais
     for _ in range(2):  # Número de Light Blue e Purple
         # Light Blue (aumenta velocidade) - Obstáculo fixo
         width, height = 100, 50
@@ -129,8 +129,16 @@ def generate_obstacles():
         y = random.randint(0, SCREEN_HEIGHT - height)
         obstacles.append(Obstacle(pygame.Rect(x, y, width, height), PINK, move_direction="vertical", speed=3))
 
+    # Gerar 1 ou 2 black holes (buracos negros)
+    for _ in range(random.randint(1, 2)):
+        size = random.randint(40, 60)  # Tamanho do círculo
+        x = random.randint(central_area_x_min, central_area_x_max - size)
+        y = random.randint(0, SCREEN_HEIGHT - size)
+        obstacles.append(Obstacle(pygame.Rect(x, y, size, size), BLACK, is_circle=True))  # Buraco negro é circular
 
-# Modified draw function to include dynamic obstacles
+
+
+# Modified draw function to include dynamic obstacles and black holes
 def draw():
     screen.fill(BLACK)
 
@@ -142,7 +150,12 @@ def draw():
 
     # Draw obstacles
     for obstacle in obstacles:
-        pygame.draw.rect(screen, obstacle.color, obstacle.rect)
+        if obstacle.is_circle:
+            # Desenhar buraco negro como círculo
+            pygame.draw.circle(screen, obstacle.color, obstacle.rect.center, obstacle.rect.width // 2)
+        else:
+            # Desenhar os outros obstáculos como retângulos
+            pygame.draw.rect(screen, obstacle.color, obstacle.rect)
 
     # Draw tanks
     draw_tank(screen, player1)
@@ -203,19 +216,25 @@ def update_projectiles():
         # Verificar colisões com obstáculos
         for obstacle in obstacles:
             if proj["rect"].colliderect(obstacle.rect):
+                if obstacle.is_circle and obstacle.color == BLACK:
+                    # Se for um buraco negro, o projétil desaparece
+                    projectiles.remove(proj)
+                    break
+
                 # Aplicar efeito de velocidade conforme o tipo de obstáculo
                 obstacle.apply_effect(proj)
 
-                # Ricochetear nos obstáculos, apenas se não forem obstáculos de ajuste de velocidade
-                if obstacle.move_direction is None:  # Obstáculos estáticos
+                # Ricochetear nos obstáculos (não ricocheteia no buraco negro)
+                if not obstacle.is_circle:  # Somente ricochetear se não for buraco negro
                     if proj["rect"].right > obstacle.rect.left and proj["rect"].left < obstacle.rect.left:
                         proj["direction"].x *= -1
                     elif proj["rect"].left < obstacle.rect.right and proj["rect"].right > obstacle.rect.right:
                         proj["direction"].x *= -1
-                    elif proj["rect"].bottom > obstacle.rect.top and proj["rect"].top < obstacle.rect.top:
+                    if proj["rect"].bottom > obstacle.rect.top and proj["rect"].top < obstacle.rect.top:
                         proj["direction"].y *= -1
                     elif proj["rect"].top < obstacle.rect.bottom and proj["rect"].bottom > obstacle.rect.bottom:
                         proj["direction"].y *= -1
+
                 break
 
 
