@@ -128,10 +128,35 @@ def update_projectiles():
         proj["rect"].x += proj["direction"].x * proj["speed"]
         proj["rect"].y += proj["direction"].y * proj["speed"]
 
+        # Verificar colisões com as bordas do mapa
         if proj["rect"].left <= 0 or proj["rect"].right >= SCREEN_WIDTH:
             proj["direction"].x *= -1
         if proj["rect"].top <= 0 or proj["rect"].bottom >= SCREEN_HEIGHT:
             proj["direction"].y *= -1
+
+        # Verificar colisões com obstáculos
+        for obstacle in obstacles:
+            if proj["rect"].colliderect(obstacle):
+                # Determinar qual borda do obstáculo está colidindo
+                if proj["rect"].right > obstacle.left and proj["rect"].left < obstacle.left:
+                    proj["direction"].x *= -1  # Ricochetear para a esquerda
+                elif proj["rect"].left < obstacle.right and proj["rect"].right > obstacle.right:
+                    proj["direction"].x *= -1  # Ricochetear para a direita
+                elif proj["rect"].bottom > obstacle.top and proj["rect"].top < obstacle.top:
+                    proj["direction"].y *= -1  # Ricochetear para cima
+                elif proj["rect"].top < obstacle.bottom and proj["rect"].bottom > obstacle.bottom:
+                    proj["direction"].y *= -1  # Ricochetear para baixo
+
+                # Certifique-se de que o projétil não penetre no obstáculo
+                if proj["direction"].x != 0:
+                    proj["rect"].x += proj["direction"].x * proj["speed"]
+                if proj["direction"].y != 0:
+                    proj["rect"].y += proj["direction"].y * proj["speed"]
+
+                break  # Sair do loop após ricocheteio
+
+
+
 
 def show_game_over_screen(message):
     screen.fill(BLACK)
