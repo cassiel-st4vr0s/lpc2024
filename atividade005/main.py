@@ -137,7 +137,6 @@ def generate_obstacles():
         obstacles.append(Obstacle(pygame.Rect(x, y, size, size), BLACK, is_circle=True))  # Buraco negro é circular
 
 
-
 # Modified draw function to include dynamic obstacles and black holes
 def draw():
     screen.fill(BLACK)
@@ -224,18 +223,19 @@ def update_projectiles():
                 # Aplicar efeito de velocidade conforme o tipo de obstáculo
                 obstacle.apply_effect(proj)
 
-                # Ricochetear nos obstáculos (não ricocheteia no buraco negro)
+                # Ricochetear nos obstáculos
                 if not obstacle.is_circle:  # Somente ricochetear se não for buraco negro
-                    if proj["rect"].right > obstacle.rect.left and proj["rect"].left < obstacle.rect.left:
-                        proj["direction"].x *= -1
-                    elif proj["rect"].left < obstacle.rect.right and proj["rect"].right > obstacle.rect.right:
-                        proj["direction"].x *= -1
-                    if proj["rect"].bottom > obstacle.rect.top and proj["rect"].top < obstacle.rect.top:
-                        proj["direction"].y *= -1
-                    elif proj["rect"].top < obstacle.rect.bottom and proj["rect"].bottom > obstacle.rect.bottom:
-                        proj["direction"].y *= -1
+                    if proj["rect"].centerx < obstacle.rect.left:
+                        proj["direction"].x = abs(proj["direction"].x)  # Rebote para a direita
+                    elif proj["rect"].centerx > obstacle.rect.right:
+                        proj["direction"].x = -abs(proj["direction"].x)  # Rebote para a esquerda
+                    if proj["rect"].centery < obstacle.rect.top:
+                        proj["direction"].y = abs(proj["direction"].y)  # Rebote para baixo
+                    elif proj["rect"].centery > obstacle.rect.bottom:
+                        proj["direction"].y = -abs(proj["direction"].y)  # Rebote para cima
 
                 break
+  # Sair do loop após o ricochete
 
 
 def show_game_over_screen(message):
@@ -473,7 +473,6 @@ def main_game_loop():
         draw()
         pygame.display.flip()
         clock.tick(60)
-
 
 # Run the game
 show_start_screen()
