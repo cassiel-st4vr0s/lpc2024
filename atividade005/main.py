@@ -341,12 +341,16 @@ def check_collisions():
                 # ricochet off obstacles
                 if proj["rect"].right > obstacle.rect.left and proj["rect"].left < obstacle.rect.left:
                     proj["direction"].x *= -1  # ricochet horizontally
+                    bounce_sound_effect.play()
                 elif proj["rect"].left < obstacle.rect.right and proj["rect"].right > obstacle.rect.right:
                     proj["direction"].x *= -1  # ricochet horizontally
+                    bounce_sound_effect.play()
                 if proj["rect"].bottom > obstacle.rect.top and proj["rect"].top < obstacle.rect.top:
                     proj["direction"].y *= -1  # ricochet vertically
+                    bounce_sound_effect.play()
                 elif proj["rect"].top < obstacle.rect.bottom and proj["rect"].bottom > obstacle.rect.bottom:
                     proj["direction"].y *= -1  # ricochet vertically
+                    bounce_sound_effect.play()
 
                 break  # exit loop after ricochet
 
