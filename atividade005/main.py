@@ -7,6 +7,10 @@ import os
 pygame.init()
 pygame.mixer.init()
 
+# load audios
+explosion_sound = pygame.mixer.Sound("assets/áudios/explosão.mp3")
+bounce_sound_effect = pygame.mixer.Sound("assets/áudios/bounce.wav")
+
 # screen setup
 SCREEN_WIDTH, SCREEN_HEIGHT = 1200, 600
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -209,8 +213,10 @@ def update_projectiles():
         # check for collisions with map edges
         if proj["rect"].left <= 0 or proj["rect"].right >= SCREEN_WIDTH:
             proj["direction"].x *= -1  # Ricochetear nas bordas horizontais
+            bounce_sound_effect.play()
         if proj["rect"].top <= 0 or proj["rect"].bottom >= SCREEN_HEIGHT:
             proj["direction"].y *= -1  # Ricochetear nas bordas verticais
+            bounce_sound_effect.play()
 
         # check for collisions with obstacles
         for obstacle in obstacles:
@@ -227,12 +233,16 @@ def update_projectiles():
                 if not obstacle.is_circle:  # only ricochet if it's not a black hole
                     if proj["rect"].centerx < obstacle.rect.left:
                         proj["direction"].x = abs(proj["direction"].x)  # rebound to the right
+                        bounce_sound_effect.play()
                     elif proj["rect"].centerx > obstacle.rect.right:
                         proj["direction"].x = -abs(proj["direction"].x)  # rebound to the left
+                        bounce_sound_effect.play()
                     if proj["rect"].centery < obstacle.rect.top:
                         proj["direction"].y = abs(proj["direction"].y)  # rebound down
+                        bounce_sound_effect.play()
                     elif proj["rect"].centery > obstacle.rect.bottom:
                         proj["direction"].y = -abs(proj["direction"].y)  # rebound up
+                        bounce_sound_effect.play()
 
                 break
   # exit loop after ricochet
@@ -299,10 +309,11 @@ def show_start_screen():
 # modified check_collisions function to include obstacles
 def check_collisions():
     for proj in projectiles[:]:
-        # Verificar se o projétil colide com o player 1
+        # check if the projectile collides with player 1
         if player1["rect"].colliderect(proj["rect"]) and proj["color"] != player1["color"]:
             player2["score"] += 1
             projectiles.remove(proj)
+            explosion_sound.play()
             respawn_players()
             generate_obstacles()
             countdown()
@@ -313,6 +324,7 @@ def check_collisions():
         elif player2["rect"].colliderect(proj["rect"]) and proj["color"] != player2["color"]:
             player1["score"] += 1
             projectiles.remove(proj)
+            explosion_sound.play()
             respawn_players()
             generate_obstacles()
             countdown()
