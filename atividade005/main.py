@@ -8,7 +8,7 @@ pygame.init()
 pygame.mixer.init()
 
 # Screen setup
-SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
+SCREEN_WIDTH, SCREEN_HEIGHT = 1200, 600  # Aumentado para 1200 pixels de largura
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Battle Tanks Multiplayer")
 
@@ -20,6 +20,7 @@ BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
 GREEN = (0, 255, 0)
 NAVY_BLUE = (21, 52, 72)
+GRAY = (128, 128, 128)
 
 # Initial positions
 PLAYER1_INITIAL_POS = (50, SCREEN_HEIGHT // 2)
@@ -90,6 +91,12 @@ def move_player(player, keys, up, down, left, right):
         new_rect.y += player["speed"]
         new_direction.y = 1
 
+    # Limitar movimento até a linha mais próxima
+    if player == player1:
+        new_rect.x = min(new_rect.x, SCREEN_WIDTH // 4 - player["rect"].width)  # Limite à esquerda
+    elif player == player2:
+        new_rect.x = max(new_rect.x, 3 * SCREEN_WIDTH // 4)  # Limite à direita
+
     new_rect.clamp_ip(pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT))
     player["rect"] = new_rect
 
@@ -130,6 +137,11 @@ def check_collisions():
                 return "Player 1 Wins!"
             break
     return None
+
+def draw_boundaries():
+    # Draw sector boundaries
+    pygame.draw.line(screen, GRAY, (SCREEN_WIDTH // 4, 0), (SCREEN_WIDTH // 4, SCREEN_HEIGHT), 5)
+    pygame.draw.line(screen, GRAY, (3 * SCREEN_WIDTH // 4, 0), (3 * SCREEN_WIDTH // 4, SCREEN_HEIGHT), 5)
 
 def respawn_player(player):
     if player == player1:
@@ -183,6 +195,8 @@ def draw():
     score_text2 = font.render(f"P2 Score: {player2['score']}", True, WHITE)
     screen.blit(score_text1, (10, 10))
     screen.blit(score_text2, (SCREEN_WIDTH - 200, 10))
+
+    draw_boundaries()
 
 def show_start_screen():
     screen.fill(BLACK)
