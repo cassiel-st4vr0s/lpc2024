@@ -1,7 +1,6 @@
 import pygame
 import sys
 import random
-import os
 
 # initialize Pygame
 pygame.init()
@@ -106,7 +105,7 @@ class Obstacle:
 
 def generate_obstacles():
     obstacles.clear()
-    
+
     # define the limits of the central area (area where obstacles can appear)
     central_area_x_min = SCREEN_WIDTH // 4
     central_area_x_max = 3 * SCREEN_WIDTH // 4
@@ -206,50 +205,59 @@ def create_projectile(x, y, direction, speed, color):
         "rect": pygame.Rect(x, y, 6, 6),
         "direction": direction,
         "speed": speed,
-        "color": color
+        "color": color,
+        "creation_time": pygame.time.get_ticks()  # Add creation time
     }
 
-
-# update projectiles with obstacle effects
 def update_projectiles():
+    current_time = pygame.time.get_ticks()
     for proj in projectiles[:]:
+        # Check if the projectile has exceeded its lifetime (8 seconds)
+        if current_time - proj["creation_time"] > 8000:  # 8000 milliseconds = 8 seconds
+            projectiles.remove(proj)
+            continue
+
+        old_pos = proj["rect"].copy()
         proj["rect"].x += proj["direction"].x * proj["speed"]
         proj["rect"].y += proj["direction"].y * proj["speed"]
 
-        # check for collisions with map edges
+        # Check for collisions with map edges
         if proj["rect"].left <= 0 or proj["rect"].right >= SCREEN_WIDTH:
-            proj["direction"].x *= -1  # Ricochetear nas bordas horizontais
+            proj["direction"].x *= -1
+            proj["rect"].x = old_pos.x  # Revert x position
             bounce_sound_effect.play()
         if proj["rect"].top <= 0 or proj["rect"].bottom >= SCREEN_HEIGHT:
-            proj["direction"].y *= -1  # Ricochetear nas bordas verticais
+            proj["direction"].y *= -1
+            proj["rect"].y = old_pos.y  # Revert y position
             bounce_sound_effect.play()
 
-        # check for collisions with obstacles
+        # Check for collisions with obstacles
         for obstacle in obstacles:
             if proj["rect"].colliderect(obstacle.rect):
                 if obstacle.is_circle and obstacle.color == BLACK:
-                    # if it's a black hole, the projectile disappears
                     projectiles.remove(proj)
                     break
 
-                # apply speed effect depending on the type of obstacle
                 obstacle.apply_effect(proj)
 
-                # ricochet off obstacles
-                if not obstacle.is_circle:  # only ricochet if it's not a black hole
-                    if proj["rect"].centerx < obstacle.rect.left:
-                        proj["direction"].x = abs(proj["direction"].x)  # rebound to the right
-                        bounce_sound_effect.play()
-                    elif proj["rect"].centerx > obstacle.rect.right:
-                        proj["direction"].x = -abs(proj["direction"].x)  # rebound to the left
-                        bounce_sound_effect.play()
-                    if proj["rect"].centery < obstacle.rect.top:
-                        proj["direction"].y = abs(proj["direction"].y)  # rebound down
-                        bounce_sound_effect.play()
-                    elif proj["rect"].centery > obstacle.rect.bottom:
-                        proj["direction"].y = -abs(proj["direction"].y)  # rebound up
-                        bounce_sound_effect.play()
+                # Determine collision side and adjust position
+                dx = proj["rect"].centerx - obstacle.rect.centerx
+                dy = proj["rect"].centery - obstacle.rect.centery
 
+                if abs(dx) > abs(dy):
+                    proj["direction"].x *= -1
+                    if dx > 0:
+                        proj["rect"].left = obstacle.rect.right
+                    else:
+                        proj["rect"].right = obstacle.rect.left
+                else:
+                    proj["direction"].y *= -1
+                    if dy > 0:
+                        proj["rect"].top = obstacle.rect.bottom
+                    else:
+                        proj["rect"].bottom = obstacle.rect.top
+
+                bounce_sound_effect.play()
                 break
   # exit loop after ricochet
 
@@ -320,7 +328,6 @@ def show_start_screen():
 # modified check_collisions function to include obstacles
 def check_collisions():
     for proj in projectiles[:]:
-        # check if the projectile collides with player 1
         if player1["rect"].colliderect(proj["rect"]) and proj["color"] != player1["color"]:
             player2["score"] += 1
             projectiles.remove(proj)
@@ -330,8 +337,6 @@ def check_collisions():
             countdown()
             if player2["score"] >= MAX_SCORE:
                 return "Player 2 Wins!"
-            break
-        # check if the projectile collides with player 2
         elif player2["rect"].colliderect(proj["rect"]) and proj["color"] != player2["color"]:
             player1["score"] += 1
             projectiles.remove(proj)
@@ -341,30 +346,44 @@ def check_collisions():
             countdown()
             if player1["score"] >= MAX_SCORE:
                 return "Player 1 Wins!"
+
+    return None
+
+def move_player(player, keys, up, down, left, right):
+    new_rect = player["rect"].copy()
+    new_direction = pygame.math.Vector2(0, 0)
+
+    if keys[left]:
+        new_rect.x -= player["speed"]
+        new_direction.x = -1
+    if keys[right]:
+        new_rect.x += player["speed"]
+        new_direction.x = 1
+    if keys[up]:
+        new_rect.y -= player["speed"]
+        new_direction.y = -1
+    if keys[down]:
+        new_rect.y += player["speed"]
+        new_direction.y = 1
+
+    # Limit movement to the nearest line
+    if player == player1:
+        new_rect.x = min(new_rect.x, SCREEN_WIDTH // 4 - player["rect"].width)
+    elif player == player2:
+        new_rect.x = max(new_rect.x, 3 * SCREEN_WIDTH // 4)
+
+    # Check collision with obstacles
+    collision = False
+    for obstacle in obstacles:
+        if new_rect.colliderect(obstacle.rect):
+            collision = True
             break
 
-        # check for collisions with obstacles
-        for obstacle in obstacles:
-            if proj["rect"].colliderect(obstacle.rect):
-                # apply the obstacle speed effect
-                obstacle.apply_effect(proj)
+    if not collision:
+        player["rect"] = new_rect.clamp(pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT))
 
-                # ricochet off obstacles
-                if proj["rect"].right > obstacle.rect.left and proj["rect"].left < obstacle.rect.left:
-                    proj["direction"].x *= -1  # ricochet horizontally
-                    bounce_sound_effect.play()
-                elif proj["rect"].left < obstacle.rect.right and proj["rect"].right > obstacle.rect.right:
-                    proj["direction"].x *= -1  # ricochet horizontally
-                    bounce_sound_effect.play()
-                if proj["rect"].bottom > obstacle.rect.top and proj["rect"].top < obstacle.rect.top:
-                    proj["direction"].y *= -1  # ricochet vertically
-                    bounce_sound_effect.play()
-                elif proj["rect"].top < obstacle.rect.bottom and proj["rect"].bottom > obstacle.rect.bottom:
-                    proj["direction"].y *= -1  # ricochet vertically
-                    bounce_sound_effect.play()
-
-                break  # exit loop after ricochet
-
+    if new_direction.length() > 0:
+        player["direction"] = new_direction.normalize()
 
 # new function for countdown
 def countdown():
@@ -439,45 +458,32 @@ def main_game_loop():
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    if current_time - player1["last_shot_time"] >= player1[
-                        "shot_cooldown"]:
-                        projectiles.append(
-                            create_projectile(player1["rect"].centerx,
-                                              player1["rect"].centery,
-                                              player1["direction"], 7, BLUE))
+                    if current_time - player1["last_shot_time"] >= player1["shot_cooldown"]:
+                        projectiles.append(create_projectile(player1["rect"].centerx, player1["rect"].centery, player1["direction"], 7, BLUE))
                         player1["last_shot_time"] = current_time
                         player1["turret_color"] = RED
                 elif event.key == pygame.K_RETURN:
-                    if current_time - player2["last_shot_time"] >= player2[
-                        "shot_cooldown"]:
-                        projectiles.append(
-                            create_projectile(player2["rect"].centerx,
-                                              player2["rect"].centery,
-                                              player2["direction"], 7, RED))
+                    if current_time - player2["last_shot_time"] >= player2["shot_cooldown"]:
+                        projectiles.append(create_projectile(player2["rect"].centerx, player2["rect"].centery, player2["direction"], 7, RED))
                         player2["last_shot_time"] = current_time
                         player2["turret_color"] = YELLOW
 
-        if current_time - player1["last_shot_time"] >= player1[
-            "shot_cooldown"]:
+        if current_time - player1["last_shot_time"] >= player1["shot_cooldown"]:
             player1["turret_color"] = NAVY_BLUE
-        if current_time - player2["last_shot_time"] >= player2[
-            "shot_cooldown"]:
+        if current_time - player2["last_shot_time"] >= player2["shot_cooldown"]:
             player2["turret_color"] = YELLOW
 
         keys = pygame.key.get_pressed()
-        move_player(player1, keys, pygame.K_w, pygame.K_s, pygame.K_a,
-                    pygame.K_d)
-        move_player(player2, keys, pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT,
-                    pygame.K_RIGHT)
+        move_player(player1, keys, pygame.K_w, pygame.K_s, pygame.K_a, pygame.K_d)
+        move_player(player2, keys, pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT)
         update_projectiles()
 
-        # move dynamic obstacles
+        # Move dynamic obstacles
         for obstacle in obstacles:
             obstacle.move()
 
         draw()
         pygame.display.flip()
-        clock.tick(60)
 
         game_over_message = check_collisions()
         if game_over_message:
@@ -498,10 +504,8 @@ def main_game_loop():
                             pygame.quit()
                             sys.exit()
 
-        draw()
-        pygame.display.flip()
         clock.tick(60)
 
-# run the game
+# Run the game
 show_start_screen()
 main_game_loop()
