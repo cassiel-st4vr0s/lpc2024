@@ -116,9 +116,11 @@ def update_projectiles():
         proj["rect"].x += proj["direction"].x * proj["speed"]
         proj["rect"].y += proj["direction"].y * proj["speed"]
 
-        if (proj["rect"].left <= 0 or proj["rect"].right >= SCREEN_WIDTH or
-                proj["rect"].top <= 0 or proj["rect"].bottom >= SCREEN_HEIGHT):
-            projectiles.remove(proj)
+        # Rebater nas bordas
+        if proj["rect"].left <= 0 or proj["rect"].right >= SCREEN_WIDTH:
+            proj["direction"].x *= -1  # Inverte a direção horizontal
+        if proj["rect"].top <= 0 or proj["rect"].bottom >= SCREEN_HEIGHT:
+            proj["direction"].y *= -1  # Inverte a direção vertical
 
 def check_collisions():
     for proj in projectiles[:]:
