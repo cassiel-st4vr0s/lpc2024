@@ -1,6 +1,7 @@
 import pygame
 from button import Button
 import sys
+from random import randint
 
 pygame.init()
 pygame.mixer.init()
@@ -55,7 +56,10 @@ def main_menu():
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if start_game.check_for_input(menu_mouse_pos):
-                    running = True
+                    keepRunning = True
+                    return keepRunning
+
+
 
         key = pygame.key.get_pressed()
         if key[pygame.K_ESCAPE]:
@@ -64,6 +68,34 @@ def main_menu():
 
         pygame.display.update()
 
+#controls settings
+controls_not_shown = True
+def show_controls(level):
+    if level == 1:
+        key_name = ['F5','F6','F7','F8']
+    if level == 2:
+        key_name = ['6','7','8','9']
+    if level == 3:
+        key_name = ['y','u','i','o']
+    if level == 4:
+        key_name = ['h','j','k','l']
+    if level == 5:
+        key_name = ['n','m','comma','period']
+
+    return key_name
+
+stages_passed = 0
+def stage_1():
+    level_1 = get_font(10).render("level 1", True, "white")
+    color = 'red'
+    screen.fill(color)
+    screen.blit(level_1, (10, 50))
+
+
+
+
+level_controls = ['']*5
+main_menu()
 #game loop
 while keepRunning:
     clock = pygame.time.Clock()
@@ -72,14 +104,32 @@ while keepRunning:
         if event.type == pygame.QUIT:
             keepRunning = False
 
-    screen.fill(color)
-    main_menu()
+    if controls_not_shown:
+        level = randint(1,5)
+        level_controls = show_controls(level)
+        controls_text = get_font(10).render(f'Controls: {level_controls}', True, "white")
+        screen.fill(color)
+        screen.blit(controls_text, (window_width//2-150, window_height//2 - 250))
+        press_space_text = get_font(10).render('Press Space to continue', True, "white")
+        screen.blit(press_space_text, (window_width//2 - 80,window_height-100))
+        controls_not_shown = False
+
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_SPACE]:
+        stage_1()
+    if keys[pygame.K_ESCAPE]:
+        keepRunning = False
+        pygame.quit()
+        quit()
+
+
+
 
 
 
     keys = pygame.key.get_pressed()
     if keys[pygame.K_ESCAPE]:
-        keepRuning = False
+        keepRunning = False
         pygame.quit()
         quit()
 
