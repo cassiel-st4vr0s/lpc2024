@@ -4,6 +4,7 @@ import sys
 
 from models.keys import Keys
 from button import Button
+from itertools import product
 
 pygame.init()
 pygame.mixer.init()
@@ -16,7 +17,7 @@ sound_effect_channel = pygame.mixer.Channel(1)
 
 # constants
 SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 800
+SCREEN_HEIGHT = 900
 FPS = 60
 WHITE = (255, 255, 255)
 GRAY = (80,80,80)
@@ -24,12 +25,14 @@ BLACK = (0, 0, 0)
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
-PLATFORM_WIDTH = 150
-PLATFORM_HEIGHT = 40
-PLAYER_SIZE = 30
+PLATFORM_WIDTH = 100
+PLATFORM_HEIGHT = 20
+PLAYER_SIZE = 15
 GRAVITY = 0.5
 JUMP_SPEED = -10
-VERTICAL_SPACING = 100
+VERTICAL_SPACING = 80
+FONT_SIZE = 30
+MAAX_COMBINATIONS = 10 #controla o numero maximo de combinações
 FONT = './assets/menu/font.ttf'
 TITLE = 'UNKNOWN!'
 MENU_BUTTON = './assets/menu/menu_rect.png'
@@ -39,6 +42,10 @@ JUMP = pygame.mixer.Sound('./assets/sfx/jump.mp3')
 last_update = pygame.time.get_ticks()
 frame = 0
 animation_cooldown = 300
+
+#variables
+combinations_size = 2 #controla a quantidade maxima de elementos agrupados
+letters = ['f','j','k'] #controla as letras combinadas
 
 class Player:
     def __init__(self, x, y):
@@ -116,7 +123,7 @@ class Level_1:
         self.display = display
         pygame.display.set_caption("Typing Game - Phase 1")
         self.clock = pygame.time.Clock()
-        self.font = pygame.font.Font(None, 36)
+        self.font = pygame.font.Font(None, FONT_SIZE)
         
         self.player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT - PLAYER_SIZE)
         self.platforms = self.create_platforms()
@@ -125,18 +132,29 @@ class Level_1:
         self.won = False
 
         self.gameStateManager = gameStateManager
+
+    def sequence_generator(self): #função que controla a criação das sequencias das letras
+        platform_texts = []
+        for size in range(1, combinations_size + 1): #limita o numero maximo de elementos
+            for word in product(letters, repeat = size):
+                platform_texts.append("".join(word))
+                if len (platform_texts) == MAAX_COMBINATIONS: #limita a quantidade de combinações
+                    break
+        return platform_texts
+
     def create_platforms(self):
         platforms = []
-        platform_texts = [
-            "fj", "ff", "jj",
-            "fjf", "jfj", "ffj", "jjf",
-            "ffjj"
-        ]
+        platform_texts = self.sequence_generator()
+        print(platform_texts)
         
         base_y = SCREEN_HEIGHT - 100
         for i, text in enumerate(platform_texts):
             y = base_y - (i * VERTICAL_SPACING)
             x = random.randint(50, SCREEN_WIDTH - PLATFORM_WIDTH - 50)
+
+            if i==0: #posiciona o player na primeira plataforma
+                self.player.x = x + (PLATFORM_WIDTH // 2) - (PLAYER_SIZE // 2)
+                self.player.y = y
             
             if i > 0:
                 prev_platform = platforms[i-1]
@@ -178,7 +196,7 @@ class Level_1:
                 current_idx = self.find_current_platform()
                 target_platform = self.platforms[current_idx]
                 
-                if event.unicode in ['f', 'j']:
+                if event.unicode in letters:
                     target_platform.typed += event.unicode
                     
                     if target_platform.is_text_match():
@@ -212,35 +230,36 @@ class Level_1:
                     self.player.y = platform.rect.top - PLAYER_SIZE
                     self.player.vel_y = 0
                     self.player.current_platform = platform
-
-        if self.player.y > SCREEN_HEIGHT:
+        #condição de game over
+        if self.player.rect.bottom >= SCREEN_HEIGHT - PLAYER_SIZE :
             self.game_over = True
 
-    def draw(self):
+    def draw(self) :
         self.display.fill(BLACK)
 
-        for i, platform in enumerate(self.platforms):
+        for i, platform in enumerate(self.platforms) :
             color = GREEN if platform.completed else WHITE
             pygame.draw.rect(self.display, color, platform.rect)
-            
+
             text_surface = self.font.render(platform.text, True, BLACK)
-            text_rect = text_surface.get_rect(center=(platform.x + PLATFORM_WIDTH/2, platform.y + PLATFORM_HEIGHT/2))
+            text_rect = text_surface.get_rect(
+                center=(platform.x + PLATFORM_WIDTH / 2, platform.y + PLATFORM_HEIGHT / 2))
             self.display.blit(text_surface, text_rect)
-            
+
             current_idx = self.find_current_platform()
-            if i == current_idx and not platform.completed:
+            if i == current_idx and not platform.completed :
                 typed_surface = self.font.render(platform.typed, True, BLUE)
-                typed_rect = typed_surface.get_rect(center=(platform.x + PLATFORM_WIDTH/2, platform.y - 25))
+                typed_rect = typed_surface.get_rect(center=(platform.x + PLATFORM_WIDTH / 2, platform.y - 25))
                 self.display.blit(typed_surface, typed_rect)
 
         pygame.draw.rect(self.display, RED, self.player.rect)
 
-        if self.game_over:
+        if self.game_over :
             text = self.font.render("Game Over! Press R to restart", True, WHITE)
-            self.screen.blit(text, (SCREEN_WIDTH//2 - 150, SCREEN_HEIGHT//2))
-        elif self.won:
+            self.display.blit(text, (SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2))
+        elif self.won :
             text = self.font.render("You Won! Press R to restart", True, WHITE)
-            self.screen.blit(text, (SCREEN_WIDTH//2 - 150, SCREEN_HEIGHT//2))
+            self.display.blit(text, (SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2))
 
         pygame.display.flip()
 
@@ -254,7 +273,7 @@ class Level_1:
                     sys.exit()
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_r and (self.game_over or self.won):
-                        self.__init__()
+                        self.__init__(self.display, self.gameStateManager)
                     else:
                         self.handle_input(event)
 
