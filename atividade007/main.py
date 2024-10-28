@@ -4,6 +4,7 @@ import sys
 
 from models.keys import Keys
 from button import Button
+from itertools import product
 
 pygame.init()
 pygame.mixer.init()
@@ -11,7 +12,6 @@ pygame.mixer.init()
 # Defining audio channels
 background_channel = pygame.mixer.Channel(0)
 sound_effect_channel = pygame.mixer.Channel(1)
-
 
 
 # constants
@@ -25,17 +25,19 @@ GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 SKY_BLUE = (69,179,224)
-PLATFORM_WIDTH = 150
-PLATFORM_HEIGHT = 40
-PLAYER_SIZE = 30
+PLATFORM_WIDTH = 100
+PLATFORM_HEIGHT = 20
+PLAYER_SIZE = 15
 GRAVITY = 0.5
 JUMP_SPEED = -10
-VERTICAL_SPACING = 100
-TITLE = 'UP IN THE SKY'
+VERTICAL_SPACING = 80
+MAX_COMBINATIONS = 10
 
 #assets
 FONT = './assets/menu/font.ttf'
 MENU_BUTTON = './assets/menu/menu_rect.png'
+TITLE = 'UP IN THE SKY'
+FONT_SIZE = 30
 JUMP = pygame.mixer.Sound('./assets/sfx/jump.mp3')
 BG_MENU = './assets/menu/bg_castle.jpg'
 BG_MUSIC = pygame.mixer.Sound('./assets/sfx/bg_music.mp3')
@@ -47,6 +49,10 @@ MISS = pygame.mixer.Sound('./assets/sfx/miss.mp3')
 last_update = pygame.time.get_ticks()
 frame = 0
 animation_cooldown = 300
+
+#variables
+combinations_size = 2 #controla a quantidade maxima de elementos agrupados
+letters = ['f','j'] #controla as letras combinadas
 
 class Player:
     def __init__(self, x, y):
@@ -125,7 +131,7 @@ class Level_1:
         self.display = display
         pygame.display.set_caption("Typing Game - Phase 1")
         self.clock = pygame.time.Clock()
-        self.font = pygame.font.Font(None, 36)
+        self.font = pygame.font.Font(None, FONT_SIZE)
         
         self.player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT - PLAYER_SIZE)
         self.platforms = self.create_platforms()
@@ -134,24 +140,36 @@ class Level_1:
         self.won = False
 
         self.gameStateManager = gameStateManager
+
+    def sequence_generator(self): #função que controla a criação das sequencias das letras
+        platform_texts = []
+        for size in range(1, combinations_size + 1): #limita o numero maximo de elementos
+            for word in product(letters, repeat = size):
+                platform_texts.append("".join(word))
+                if len (platform_texts) == MAX_COMBINATIONS: #limita a quantidade de combinações
+                    break
+        return platform_texts
+
     def create_platforms(self):
         platforms = []
-        platform_texts = [
-            "fj", "ff", "jj",
-            "fjf", "jfj", "ffj", "jjf",
-            "ffjj"
-        ]
+        platform_texts = self.sequence_generator()
+        print(platform_texts)
         
         base_y = SCREEN_HEIGHT - 100
         for i, text in enumerate(platform_texts):
             y = base_y - (i * VERTICAL_SPACING)
             x = random.randint(50, SCREEN_WIDTH - PLATFORM_WIDTH - 50)
-            
+
+            if i==0: #posiciona o player na primeira plataforma
+                self.player.x = x + (PLATFORM_WIDTH // 2) - (PLAYER_SIZE // 2)
+                self.player.y = y
+
             if i > 0:
                 prev_platform = platforms[i-1]
                 min_spacing = VERTICAL_SPACING - 20
                 if prev_platform.y - y < min_spacing:
                     y = prev_platform.y - min_spacing
+
             platforms.append(Platform(x, y, text))
         
         return platforms
@@ -186,7 +204,7 @@ class Level_1:
                 current_idx = self.find_current_platform()
                 target_platform = self.platforms[current_idx]
                 
-                if event.unicode in ['f', 'j']:
+                if event.unicode in letters:
                     target_platform.typed += event.unicode
                     
                     if target_platform.is_text_match():
@@ -222,8 +240,8 @@ class Level_1:
                     self.player.y = platform.rect.top - PLAYER_SIZE
                     self.player.vel_y = 0
                     self.player.current_platform = platform
-
-        if self.player.y > SCREEN_HEIGHT:
+        #condição de game over
+        if self.player.rect.bottom >= SCREEN_HEIGHT - PLAYER_SIZE :
             self.game_over = True
 
     def draw(self):
@@ -249,7 +267,6 @@ class Level_1:
             text = self.font.render("Game Over! Press R to restart", True, WHITE)
             self.display.blit(text, (SCREEN_WIDTH//2 - 150, SCREEN_HEIGHT//2))
         elif self.won:
-
             text = self.font.render("You Won! Press R to restart", True, WHITE)
             self.display.blit(text, (SCREEN_WIDTH//2 - 150, SCREEN_HEIGHT//2))
 
@@ -491,6 +508,7 @@ class ControlsScreen:
     def run(self):
         global last_update, frame,animation_cooldown
 
+        bg = pygame.image.load(BG_MENU)
         keys_loaded = (ControlsScreen.load_key_sprite_sheets(self, 1))
         controls_text = Start.get_font(self,30).render('Controls:', True, WHITE)
         press_any = Start.get_font(self,20).render('Press ANY KEY to CONTINUE', True, WHITE)
@@ -545,8 +563,6 @@ class ControlsScreen:
             key_sprite_sheet_2 = Keys(key_sprite_sheet_image_2)
             for x in range(animation_steps):
                 key_2_list.append(Keys.get_image(key_sprite_sheet_2, x, 19, 21, 2, BLACK))
-
-
 
 
         elif level == 2:
