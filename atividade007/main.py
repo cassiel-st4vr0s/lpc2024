@@ -6,6 +6,13 @@ from models.keys import Keys
 from button import Button
 
 pygame.init()
+pygame.mixer.init()
+
+# Defining audio channels
+background_channel = pygame.mixer.Channel(0)
+sound_effect_channel = pygame.mixer.Channel(1)
+
+
 
 # constants
 SCREEN_WIDTH = 800
@@ -26,6 +33,7 @@ VERTICAL_SPACING = 100
 FONT = './assets/menu/font.ttf'
 TITLE = 'UNKNOWN!'
 MENU_BUTTON = './assets/menu/menu_rect.png'
+JUMP = pygame.mixer.Sound('./assets/sfx/jump.mp3')
 
 #animation
 last_update = pygame.time.get_ticks()
