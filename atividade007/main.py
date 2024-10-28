@@ -2,23 +2,62 @@ import pygame
 import random
 import sys
 
+from models.keys import Keys
+from button import Button
+from itertools import product
+
 pygame.init()
+
+# Defining audio channels
+background_channel = pygame.mixer.Channel(0)
+sound_effect_channel = pygame.mixer.Channel(1)
+
 
 # constants
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 800
 FPS = 60
 WHITE = (255, 255, 255)
+GRAY = (80,80,80)
 BLACK = (0, 0, 0)
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
-PLATFORM_WIDTH = 150
-PLATFORM_HEIGHT = 40
-PLAYER_SIZE = 30
+SKY_BLUE = (69,179,224)
+PLATFORM_WIDTH = 100
+PLATFORM_HEIGHT = 20
+PLAYER_SIZE = 15
 GRAVITY = 0.5
 JUMP_SPEED = -10
-VERTICAL_SPACING = 100
+VERTICAL_SPACING = 80
+MAX_COMBINATIONS = 10
+
+#assets
+FONT = './assets/menu/font.ttf'
+MENU_BUTTON = './assets/menu/menu_rect.png'
+TITLE = 'UP IN THE SKY'
+FONT_SIZE = 30
+JUMP = pygame.mixer.Sound('./assets/sfx/jump.mp3')
+BG_MENU = './assets/menu/bg_castle.jpg'
+BG_MUSIC = pygame.mixer.Sound('./assets/sfx/bg_music.mp3')
+BUTTON_PRESS = pygame.mixer.Sound('./assets/sfx/button.mp3')
+MISS = pygame.mixer.Sound('./assets/sfx/miss.mp3')
+
+def jump_to_platform(self, platform):
+        self.jumping = True
+        self.target_y = platform.y - PLAYER_SIZE
+        self.x = platform.x + (PLATFORM_WIDTH // 2) - (PLAYER_SIZE // 2)
+        self.rect.x = self.x
+        self.vel_y = 0
+
+#animation
+last_update = pygame.time.get_ticks()
+frame = 0
+animation_cooldown = 300
+
+#variables
+combinations_size = 2 #controla a quantidade maxima de elementos agrupados
+letters = ['f','j'] #controla as letras combinadas
 
 class Player:
     def __init__(self, x, y):
@@ -66,10 +105,40 @@ class Platform:
 
     def is_text_match(self):
         return self.typed == self.text
-
-class Game:
+class GameLoop:
     def __init__(self):
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        pygame.display.set_caption("Typing Game - Phase 1")
+
+
+
+        self.gameStateManager = GameStateManager('main menu')
+        self.start = Start(self.screen, self.gameStateManager)
+        self.controlsScreen = ControlsScreen(self.screen, self.gameStateManager)
+        self.controlsScreen2 = ControlsScreen2(self.screen, self.gameStateManager)
+        self.controlsScreen3 = ControlsScreen3(self.screen,self.gameStateManager)
+        self.level_1 = Level_1(self.screen,self.gameStateManager)
+        self.level_2 = Level_2(self.screen,self.gameStateManager)
+        self.level_3 = Level_3(self.screen,self.gameStateManager)
+
+
+        self.states = {'main menu': self.start, 'controls screen': self.controlsScreen, 'level 1': self.level_1,'level 2':self.level_2,
+                       'level 3':self.level_3,'controls screen 2':self.controlsScreen2,'controls screen 3':self.controlsScreen3}
+
+    def run(self):
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                    pygame.quit()
+                    sys.exit()
+            self.states[self.gameStateManager.get_state()].run()
+            pygame.display.update()
+
+class Level_1:
+    def __init__(self,display,gameStateManager):
+        self.display = display
         pygame.display.set_caption("Typing Game - Phase 1")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 36)
@@ -80,25 +149,36 @@ class Game:
         self.game_over = False
         self.won = False
 
+        self.gameStateManager = gameStateManager
+
+    def sequence_generator(self): #função que controla a criação das sequencias das letras
+        platform_texts = []
+        for size in range(1, combinations_size + 1): #limita o numero maximo de elementos
+            for word in product(letters, repeat = size):
+                platform_texts.append("".join(word))
+                if len (platform_texts) == MAX_COMBINATIONS: #limita a quantidade de combinações
+                    break
+        return platform_texts
+
     def create_platforms(self):
         platforms = []
-        platform_texts = [
-            "fj", "ff", "jj",
-            "fjf", "jfj", "ffj", "jjf",
-            "ffjj"
-        ]
+        platform_texts = self.sequence_generator()
+        print(platform_texts)
         
         base_y = SCREEN_HEIGHT - 100
         for i, text in enumerate(platform_texts):
             y = base_y - (i * VERTICAL_SPACING)
             x = random.randint(50, SCREEN_WIDTH - PLATFORM_WIDTH - 50)
-            
+
+            if i==0: #posiciona o player na primeira plataforma
+                self.player.x = x + (PLATFORM_WIDTH // 2) - (PLAYER_SIZE // 2)
+                self.player.y = y
+
             if i > 0:
                 prev_platform = platforms[i-1]
                 min_spacing = VERTICAL_SPACING - 20
                 if prev_platform.y - y < min_spacing:
                     y = prev_platform.y - min_spacing
-            
             platforms.append(Platform(x, y, text))
         
         return platforms
@@ -133,13 +213,12 @@ class Game:
                 current_idx = self.find_current_platform()
                 target_platform = self.platforms[current_idx]
                 
-                if event.unicode in ['f', 'j']:
+                if event.unicode in letters:
                     target_platform.typed += event.unicode
                     
                     if target_platform.is_text_match():
                         target_platform.completed = True
                         self.target_platform_idx = current_idx + 1
-                        
                         if self.target_platform_idx < len(self.platforms):
                             # find the next uncompleted platform
                             while (self.target_platform_idx < len(self.platforms) and 
@@ -149,12 +228,14 @@ class Game:
                             if self.target_platform_idx < len(self.platforms):
                                 next_platform = self.platforms[self.target_platform_idx]
                                 self.player.jump_to_platform(next_platform)
+                                sound_effect_channel.play(JUMP)
                             else:
                                 self.won = True
                         else:
                             self.won = True
                     elif len(target_platform.typed) >= len(target_platform.text):
                         target_platform.typed = ""
+                        sound_effect_channel.play(MISS)
 
     def update(self):
         self.player.update()
@@ -167,35 +248,36 @@ class Game:
                     self.player.y = platform.rect.top - PLAYER_SIZE
                     self.player.vel_y = 0
                     self.player.current_platform = platform
-
-        if self.player.y > SCREEN_HEIGHT:
+        #condição de game over
+        if self.player.rect.bottom >= SCREEN_HEIGHT - PLAYER_SIZE :
             self.game_over = True
 
     def draw(self):
-        self.screen.fill(BLACK)
+        self.display.fill(SKY_BLUE)
 
         for i, platform in enumerate(self.platforms):
             color = GREEN if platform.completed else WHITE
-            pygame.draw.rect(self.screen, color, platform.rect)
+            pygame.draw.rect(self.display, color, platform.rect)
             
             text_surface = self.font.render(platform.text, True, BLACK)
             text_rect = text_surface.get_rect(center=(platform.x + PLATFORM_WIDTH/2, platform.y + PLATFORM_HEIGHT/2))
-            self.screen.blit(text_surface, text_rect)
+            self.display.blit(text_surface, text_rect)
             
             current_idx = self.find_current_platform()
             if i == current_idx and not platform.completed:
                 typed_surface = self.font.render(platform.typed, True, BLUE)
                 typed_rect = typed_surface.get_rect(center=(platform.x + PLATFORM_WIDTH/2, platform.y - 25))
-                self.screen.blit(typed_surface, typed_rect)
+                self.display.blit(typed_surface, typed_rect)
 
-        pygame.draw.rect(self.screen, RED, self.player.rect)
+        pygame.draw.rect(self.display, RED, self.player.rect)
 
         if self.game_over:
             text = self.font.render("Game Over! Press R to restart", True, WHITE)
-            self.screen.blit(text, (SCREEN_WIDTH//2 - 150, SCREEN_HEIGHT//2))
+            self.display.blit(text, (SCREEN_WIDTH//2 - 150, SCREEN_HEIGHT//2))
         elif self.won:
-            text = self.font.render("You Won! Press R to restart", True, WHITE)
-            self.screen.blit(text, (SCREEN_WIDTH//2 - 150, SCREEN_HEIGHT//2))
+
+            text = self.font.render("You Won! Press R to proceed!", True, WHITE)
+            self.display.blit(text, (SCREEN_WIDTH//2 - 150, SCREEN_HEIGHT//2))
 
         pygame.display.flip()
 
@@ -205,9 +287,325 @@ class Game:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
+                    pygame.quit()
+                    sys.exit()
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_r and (self.game_over or self.won):
-                        self.__init__()
+                        running = False
+                        break
+                    else:
+                        self.handle_input(event)
+            self.gameStateManager.set_state('controls screen 2')
+
+            if not self.game_over and not self.won:
+                self.update()
+            self.draw()
+            self.clock.tick(FPS)
+
+
+class Level_2:
+    def __init__(self, display, gameStateManager):
+        self.display = display
+        pygame.display.set_caption("Typing Game - Phase 2")
+        self.clock = pygame.time.Clock()
+        self.font = pygame.font.Font(None, 36)
+
+        self.player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT - PLAYER_SIZE)
+        self.platforms = self.create_platforms()
+        self.target_platform_idx = 0
+        self.game_over = False
+        self.won = False
+
+        self.gameStateManager = gameStateManager
+
+    def create_platforms(self):
+        platforms = []
+        platform_texts = [
+            "as", "da", "gd",
+            "dgs", "ssa", "afd", "gfs",
+            "asdf"
+        ]
+
+        base_y = SCREEN_HEIGHT - 100
+        for i, text in enumerate(platform_texts):
+            y = base_y - (i * VERTICAL_SPACING)
+            x = random.randint(50, SCREEN_WIDTH - PLATFORM_WIDTH - 50)
+
+            if i > 0:
+                prev_platform = platforms[i - 1]
+                min_spacing = VERTICAL_SPACING - 20
+                if prev_platform.y - y < min_spacing:
+                    y = prev_platform.y - min_spacing
+            platforms.append(Platform(x, y, text))
+
+        return platforms
+
+    def find_current_platform(self):
+        # find the platform the player is currently on or closest to
+        closest_platform = None
+        min_distance = float('inf')
+
+        for i, platform in enumerate(self.platforms):
+            if not platform.completed:
+                # check if player is on or very close to this platform
+                if (abs(self.player.rect.bottom - platform.rect.top) < 5 and
+                        self.player.x >= platform.x and
+                        self.player.x <= platform.x + PLATFORM_WIDTH):
+                    return i
+
+                # calculate distance to platform
+                dx = (platform.x + PLATFORM_WIDTH / 2) - (self.player.x + PLAYER_SIZE / 2)
+                dy = (platform.y) - (self.player.y + PLAYER_SIZE)
+                distance = (dx * dx + dy * dy) ** 0.5
+
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_platform = i
+
+        return closest_platform if closest_platform is not None else 0
+
+    def handle_input(self, event):
+        if event.type == pygame.KEYDOWN:
+            if not self.player.jumping and self.target_platform_idx < len(self.platforms):
+                current_idx = self.find_current_platform()
+                target_platform = self.platforms[current_idx]
+
+                if event.unicode in ['a', 's','d','f','g']:
+                    target_platform.typed += event.unicode
+
+                    if target_platform.is_text_match():
+                        target_platform.completed = True
+                        self.target_platform_idx = current_idx + 1
+
+                        if self.target_platform_idx < len(self.platforms):
+                            # find the next uncompleted platform
+                            while (self.target_platform_idx < len(self.platforms) and
+                                   self.platforms[self.target_platform_idx].completed):
+                                self.target_platform_idx += 1
+
+                            if self.target_platform_idx < len(self.platforms):
+                                next_platform = self.platforms[self.target_platform_idx]
+                                self.player.jump_to_platform(next_platform)
+                                sound_effect_channel.play(JUMP)
+                            else:
+                                self.won = True
+                        else:
+                            self.won = True
+                    elif len(target_platform.typed) >= len(target_platform.text):
+                        target_platform.typed = ""
+                        sound_effect_channel.play(MISS)
+
+    def update(self):
+        self.player.update()
+
+        if not self.player.jumping:
+            for platform in self.platforms:
+                if (self.player.rect.colliderect(platform.rect) and
+                        self.player.vel_y > 0 and
+                        not platform.completed):
+                    self.player.y = platform.rect.top - PLAYER_SIZE
+                    self.player.vel_y = 0
+                    self.player.current_platform = platform
+
+        if self.player.y > SCREEN_HEIGHT:
+            self.game_over = True
+
+    def draw(self):
+        self.display.fill(SKY_BLUE)
+
+        for i, platform in enumerate(self.platforms):
+            color = GREEN if platform.completed else WHITE
+            pygame.draw.rect(self.display, color, platform.rect)
+
+            text_surface = self.font.render(platform.text, True, BLACK)
+            text_rect = text_surface.get_rect(
+                center=(platform.x + PLATFORM_WIDTH / 2, platform.y + PLATFORM_HEIGHT / 2))
+            self.display.blit(text_surface, text_rect)
+
+            current_idx = self.find_current_platform()
+            if i == current_idx and not platform.completed:
+                typed_surface = self.font.render(platform.typed, True, BLUE)
+                typed_rect = typed_surface.get_rect(center=(platform.x + PLATFORM_WIDTH / 2, platform.y - 25))
+                self.display.blit(typed_surface, typed_rect)
+
+        pygame.draw.rect(self.display, RED, self.player.rect)
+
+        if self.game_over:
+            text = self.font.render("Game Over! Press R to restart", True, WHITE)
+            self.display.blit(text, (SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2))
+        elif self.won:
+            text = self.font.render("You Won! Press R to proceed", True, WHITE)
+            self.display.blit(text, (SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2))
+
+        pygame.display.flip()
+
+    def run(self):
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_r and (self.game_over or self.won):
+                        running = False
+                        break
+                    else:
+                        self.handle_input(event)
+            self.gameStateManager.set_state('controls screen 3')
+            if not self.game_over and not self.won:
+                self.update()
+            self.draw()
+            self.clock.tick(FPS)
+
+class Level_3:
+    def __init__(self, display, gameStateManager):
+        self.display = display
+        pygame.display.set_caption("Typing Game - Phase 3")
+        self.clock = pygame.time.Clock()
+        self.font = pygame.font.Font(None, 36)
+
+        self.player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT - PLAYER_SIZE)
+        self.platforms = self.create_platforms()
+        self.target_platform_idx = 0
+        self.game_over = False
+        self.won = False
+
+        self.gameStateManager = gameStateManager
+
+    def create_platforms(self):
+        platforms = []
+        platform_texts = [
+            "hj", "lk", "jlh",
+            "çlh", "çhk", "hhç", "jkh",
+            "çlkj"
+        ]
+
+        base_y = SCREEN_HEIGHT - 100
+        for i, text in enumerate(platform_texts):
+            y = base_y - (i * VERTICAL_SPACING)
+            x = random.randint(50, SCREEN_WIDTH - PLATFORM_WIDTH - 50)
+
+            if i > 0:
+                prev_platform = platforms[i - 1]
+                min_spacing = VERTICAL_SPACING - 20
+                if prev_platform.y - y < min_spacing:
+                    y = prev_platform.y - min_spacing
+            platforms.append(Platform(x, y, text))
+
+        return platforms
+
+    def find_current_platform(self):
+        # find the platform the player is currently on or closest to
+        closest_platform = None
+        min_distance = float('inf')
+
+        for i, platform in enumerate(self.platforms):
+            if not platform.completed:
+                # check if player is on or very close to this platform
+                if (abs(self.player.rect.bottom - platform.rect.top) < 5 and
+                        self.player.x >= platform.x and
+                        self.player.x <= platform.x + PLATFORM_WIDTH):
+                    return i
+
+                # calculate distance to platform
+                dx = (platform.x + PLATFORM_WIDTH / 2) - (self.player.x + PLAYER_SIZE / 2)
+                dy = (platform.y) - (self.player.y + PLAYER_SIZE)
+                distance = (dx * dx + dy * dy) ** 0.5
+
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_platform = i
+
+        return closest_platform if closest_platform is not None else 0
+
+    def handle_input(self, event):
+        if event.type == pygame.KEYDOWN:
+            if not self.player.jumping and self.target_platform_idx < len(self.platforms):
+                current_idx = self.find_current_platform()
+                target_platform = self.platforms[current_idx]
+
+                if event.unicode in ['h', 'j', 'k', 'l', 'ç']:
+                    target_platform.typed += event.unicode
+
+                    if target_platform.is_text_match():
+                        target_platform.completed = True
+                        self.target_platform_idx = current_idx + 1
+
+                        if self.target_platform_idx < len(self.platforms):
+                            # find the next uncompleted platform
+                            while (self.target_platform_idx < len(self.platforms) and
+                                   self.platforms[self.target_platform_idx].completed):
+                                self.target_platform_idx += 1
+
+                            if self.target_platform_idx < len(self.platforms):
+                                next_platform = self.platforms[self.target_platform_idx]
+                                self.player.jump_to_platform(next_platform)
+                                sound_effect_channel.play(JUMP)
+                            else:
+                                self.won = True
+                        else:
+                            self.won = True
+                    elif len(target_platform.typed) >= len(target_platform.text):
+                        target_platform.typed = ""
+                        sound_effect_channel.play(MISS)
+
+    def update(self):
+        self.player.update()
+
+        if not self.player.jumping:
+            for platform in self.platforms:
+                if (self.player.rect.colliderect(platform.rect) and
+                        self.player.vel_y > 0 and
+                        not platform.completed):
+                    self.player.y = platform.rect.top - PLAYER_SIZE
+                    self.player.vel_y = 0
+                    self.player.current_platform = platform
+
+        if self.player.y > SCREEN_HEIGHT:
+            self.game_over = True
+
+    def draw(self):
+        self.display.fill(SKY_BLUE)
+
+        for i, platform in enumerate(self.platforms):
+            color = GREEN if platform.completed else WHITE
+            pygame.draw.rect(self.display, color, platform.rect)
+
+            text_surface = self.font.render(platform.text, True, BLACK)
+            text_rect = text_surface.get_rect(
+                center=(platform.x + PLATFORM_WIDTH / 2, platform.y + PLATFORM_HEIGHT / 2))
+            self.display.blit(text_surface, text_rect)
+
+            current_idx = self.find_current_platform()
+            if i == current_idx and not platform.completed:
+                typed_surface = self.font.render(platform.typed, True, BLUE)
+                typed_rect = typed_surface.get_rect(center=(platform.x + PLATFORM_WIDTH / 2, platform.y - 25))
+                self.display.blit(typed_surface, typed_rect)
+
+        pygame.draw.rect(self.display, RED, self.player.rect)
+
+        if self.game_over:
+            text = self.font.render("Game Over! Press R to restart", True, WHITE)
+            self.display.blit(text, (SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2))
+        elif self.won:
+            text = self.font.render("You Won! Press R to restart", True, WHITE)
+            self.display.blit(text, (SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2))
+
+        pygame.display.flip()
+
+    def run(self):
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_r and (self.game_over or self.won):
+                        self.__init__(self.display, self.gameStateManager)
                     else:
                         self.handle_input(event)
 
@@ -216,9 +614,364 @@ class Game:
             self.draw()
             self.clock.tick(FPS)
 
-        pygame.quit()
-        sys.exit()
+
+class Start:
+    def __init__(self,display,gameStateManager):
+        self.display = display
+        self.gameStateManager = gameStateManager
+
+    def get_font(self, size):
+        return pygame.font.Font(FONT, size)
+
+    def run(self):
+        global background_channel
+        pygame.display.set_caption("Main Menu")
+        running = True
+        bg = pygame.image.load(BG_MENU)
+        bg = pygame.transform.scale_by(bg, 0.7)
+        background_channel.play(BG_MUSIC,loops=-1)
+        BG_MUSIC.set_volume(0.2)
+
+        BUTTON_PRESS.set_volume(0.3)
+
+        while running:
+            self.display.fill(SKY_BLUE)
+            self.display.blit(bg, (0,100))
+
+            menu_mouse_pos = pygame.mouse.get_pos()
+            menu_text = Start.get_font(self, 36).render(TITLE, True, GRAY)
+            menu_rect = menu_text.get_rect(center=(SCREEN_WIDTH //2, 100))
+            image = pygame.image.load(MENU_BUTTON)
+            pygame.Surface.convert_alpha(image)
+            start_game = Button(image=pygame.transform.scale(image, (370, 80)),
+                                pos=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2),
+                                text_input="PLAY", font=Start.get_font(self, 25), base_color=BLACK,
+                                hovering_color=GRAY)
+
+            self.display.blit(menu_text, menu_rect)
+
+            for button in [start_game]:
+                button.change_color(menu_mouse_pos)
+                button.update(self.display)
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if start_game.check_for_input(menu_mouse_pos):
+                        sound_effect_channel.play(BUTTON_PRESS)
+                        running = False
+
+
+            pygame.display.update()
+        level = 1
+        self.gameStateManager.set_state('controls screen')
+
+class ControlsScreen:
+    def __init__(self,display,gameStateManager):
+        self.display = display
+        self.gameStateManager = gameStateManager
+    def run(self):
+        global last_update, frame,animation_cooldown
+
+        keys_loaded = (ControlsScreen.load_key_sprite_sheets(self, 1))
+        controls_text = Start.get_font(self,30).render('Controls:', True, WHITE)
+        press_any = Start.get_font(self,20).render('Press ANY KEY to CONTINUE', True, WHITE)
+        button_sfx = pygame.mixer.Sound(BUTTON_PRESS)
+        button_sfx.set_volume(0.3)
+        running = True
+        while running:
+            self.display.fill(SKY_BLUE)
+
+            # update animation
+            current_time = pygame.time.get_ticks()
+            if current_time - last_update >= animation_cooldown:
+                frame += 1
+                last_update = current_time
+                if frame >= 3:
+                    frame = 0
+            self.display.blit(controls_text, (SCREEN_WIDTH//2 - 130, 300))
+            self.display.blit(press_any,(150,SCREEN_HEIGHT-100))
+
+            if len(keys_loaded)>=4:
+                self.display.blit(keys_loaded[0][frame], (SCREEN_WIDTH//2 -100,SCREEN_HEIGHT//2 ))
+                self.display.blit(keys_loaded[1][frame], (SCREEN_WIDTH//2 - 50, SCREEN_HEIGHT//2))
+                self.display.blit(keys_loaded[2][frame], (SCREEN_WIDTH//2 , SCREEN_HEIGHT//2 ))
+                self.display.blit(keys_loaded[3][frame], (SCREEN_WIDTH//2 + 50, SCREEN_HEIGHT//2))
+                self.display.blit(keys_loaded[4][frame],(SCREEN_WIDTH//2 + 100, SCREEN_HEIGHT//2))
+            else:
+                self.display.blit(keys_loaded[0][frame], (SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2))
+                self.display.blit(keys_loaded[1][frame], (SCREEN_WIDTH // 2 - 50, SCREEN_HEIGHT // 2))
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    sound_effect_channel.play(button_sfx)
+                    running = False
+            pygame.display.update()
+        self.gameStateManager.set_state('level 1')
+
+
+
+    def load_key_sprite_sheets(self,level):
+        animation_steps = 3
+        key_1_list = []
+        key_2_list = []
+        key_3_list = []
+        key_4_list = []
+        key_5_list =[]
+        if level == 1:
+            key_sprite_sheet_image_1 = pygame.image.load("./assets/controls/F.png")
+            key_sprite_sheet_1 = Keys(key_sprite_sheet_image_1)
+            for x in range(animation_steps):
+                key_1_list.append(Keys.get_image(key_sprite_sheet_1, x, 19, 21, 2, BLACK))
+            key_sprite_sheet_image_2 = pygame.image.load("./assets/controls/J.png")
+            key_sprite_sheet_2 = Keys(key_sprite_sheet_image_2)
+            for x in range(animation_steps):
+                key_2_list.append(Keys.get_image(key_sprite_sheet_2, x, 19, 21, 2, BLACK))
+            return [key_1_list,key_2_list]
+
+
+
+        elif level == 2:
+            key_sprite_sheet_image_1 = pygame.image.load("./assets/controls/A.png")
+            key_sprite_sheet_1 = Keys(key_sprite_sheet_image_1)
+            for x in range(animation_steps):
+                key_1_list.append(Keys.get_image(key_sprite_sheet_1, x, 19, 21, 2, BLACK))
+            key_sprite_sheet_image_2 = pygame.image.load("./assets/controls/S.png")
+            key_sprite_sheet_2 = Keys(key_sprite_sheet_image_2)
+            for x in range(animation_steps):
+                key_2_list.append(Keys.get_image(key_sprite_sheet_2, x, 19, 21, 2, BLACK))
+            key_sprite_sheet_image_3 = pygame.image.load("./assets/controls/D.png")
+            key_sprite_sheet_3 = Keys(key_sprite_sheet_image_3)
+            for x in range(animation_steps):
+                key_3_list.append(Keys.get_image(key_sprite_sheet_3, x, 19, 21, 2, BLACK))
+            key_sprite_sheet_image_4 = pygame.image.load("./assets/controls/F.png")
+            key_sprite_sheet_4 = Keys(key_sprite_sheet_image_4)
+            for x in range(animation_steps):
+                key_4_list.append(Keys.get_image(key_sprite_sheet_4, x, 19, 21, 2, BLACK))
+            key_sprite_sheet_image_5 = pygame.image.load("./assets/controls/G.png")
+            key_sprite_sheet_5 = Keys(key_sprite_sheet_image_5)
+            for x in range(animation_steps):
+                key_5_list.append(Keys.get_image(key_sprite_sheet_5, x, 19, 21, 2, BLACK))
+            return [key_1_list, key_2_list, key_3_list, key_4_list, key_5_list]
+
+        elif level == 3:
+            key_sprite_sheet_image_1 = pygame.image.load("./assets/controls/H.png")
+            key_sprite_sheet_1 = Keys(key_sprite_sheet_image_1)
+            for x in range(animation_steps):
+                key_1_list.append(Keys.get_image(key_sprite_sheet_1, x, 19, 21, 2, BLACK))
+            key_sprite_sheet_image_2 = pygame.image.load("./assets/controls/J.png")
+            key_sprite_sheet_2 = Keys(key_sprite_sheet_image_2)
+            for x in range(animation_steps):
+                key_2_list.append(Keys.get_image(key_sprite_sheet_2, x, 19, 21, 2, BLACK))
+            key_sprite_sheet_image_3 = pygame.image.load("./assets/controls/K.png")
+            key_sprite_sheet_3 = Keys(key_sprite_sheet_image_3)
+            for x in range(animation_steps):
+                key_3_list.append(Keys.get_image(key_sprite_sheet_3, x, 19, 21, 2, BLACK))
+            key_sprite_sheet_image_4 = pygame.image.load("./assets/controls/L.png")
+            key_sprite_sheet_4 = Keys(key_sprite_sheet_image_4)
+            for x in range(animation_steps):
+                key_4_list.append(Keys.get_image(key_sprite_sheet_4, x, 19, 21, 2, BLACK))
+            key_sprite_sheet_image_5 = pygame.image.load("./assets/controls/C.png")
+            key_sprite_sheet_5 = Keys(key_sprite_sheet_image_5)
+            for x in range(animation_steps):
+                key_5_list.append(Keys.get_image(key_sprite_sheet_5, x, 19, 21, 2, BLACK))
+            return [key_1_list,key_2_list,key_3_list,key_4_list,key_5_list]
+        else:
+            key_sprite_sheet_image_1 = pygame.image.load("./assets/controls/N.png")
+            key_sprite_sheet_1 = Keys(key_sprite_sheet_image_1)
+            for x in range(animation_steps):
+                key_1_list.append(Keys.get_image(key_sprite_sheet_1, x, 19, 21, 2, BLACK))
+            key_sprite_sheet_image_2 = pygame.image.load("./assets/controls/M.png")
+            key_sprite_sheet_2 = Keys(key_sprite_sheet_image_2)
+            for x in range(animation_steps):
+                key_2_list.append(Keys.get_image(key_sprite_sheet_2, x, 19, 21, 2, BLACK))
+            key_sprite_sheet_image_3 = pygame.image.load("./assets/controls/LESSTHAN.png")
+            key_sprite_sheet_3 = Keys(key_sprite_sheet_image_3)
+            for x in range(animation_steps):
+                key_3_list.append(Keys.get_image(key_sprite_sheet_3, x, 19, 21, 2, BLACK))
+            key_sprite_sheet_image_4 = pygame.image.load("./assets/controls/GREATERTHAN.png")
+            key_sprite_sheet_4 = Keys(key_sprite_sheet_image_4)
+            for x in range(animation_steps):
+                key_4_list.append(Keys.get_image(key_sprite_sheet_4, x, 19, 21, 2, BLACK))
+
+
+class ControlsScreen2:
+    def __init__(self,display,gameStateManager):
+        self.display = display
+        self.gameStateManager = gameStateManager
+    def run(self):
+        global last_update, frame,animation_cooldown
+
+        keys_loaded = (ControlsScreen.load_key_sprite_sheets(self, 2))
+        controls_text = Start.get_font(self,30).render('Controls:', True, WHITE)
+        press_any = Start.get_font(self,20).render('Press ANY KEY to CONTINUE', True, WHITE)
+        button_sfx = pygame.mixer.Sound(BUTTON_PRESS)
+        button_sfx.set_volume(0.3)
+        running = True
+        while running:
+            self.display.fill(SKY_BLUE)
+
+            # update animation
+            current_time = pygame.time.get_ticks()
+            if current_time - last_update >= animation_cooldown:
+                frame += 1
+                last_update = current_time
+                if frame >= 3:
+                    frame = 0
+            self.display.blit(controls_text, (SCREEN_WIDTH//2 - 130, 300))
+            self.display.blit(press_any,(150,SCREEN_HEIGHT-100))
+
+            if len(keys_loaded)>=4:
+                self.display.blit(keys_loaded[0][frame], (SCREEN_WIDTH//2 -100,SCREEN_HEIGHT//2 ))
+                self.display.blit(keys_loaded[1][frame], (SCREEN_WIDTH//2 - 50, SCREEN_HEIGHT//2))
+                self.display.blit(keys_loaded[2][frame], (SCREEN_WIDTH//2 , SCREEN_HEIGHT//2 ))
+                self.display.blit(keys_loaded[3][frame], (SCREEN_WIDTH//2 + 50, SCREEN_HEIGHT//2))
+                self.display.blit(keys_loaded[4][frame],(SCREEN_WIDTH//2 + 100, SCREEN_HEIGHT//2))
+            else:
+                self.display.blit(keys_loaded[0][frame], (SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2))
+                self.display.blit(keys_loaded[1][frame], (SCREEN_WIDTH // 2 - 50, SCREEN_HEIGHT // 2))
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    sound_effect_channel.play(button_sfx)
+                    running = False
+            pygame.display.update()
+        self.gameStateManager.set_state('level 2')
+
+
+
+    def load_key_sprite_sheets(self,level):
+        animation_steps = 3
+        key_1_list = []
+        key_2_list = []
+        key_3_list = []
+        key_4_list = []
+        key_5_list =[]
+
+        key_sprite_sheet_image_1 = pygame.image.load("./assets/controls/A.png")
+        key_sprite_sheet_1 = Keys(key_sprite_sheet_image_1)
+        for x in range(animation_steps):
+            key_1_list.append(Keys.get_image(key_sprite_sheet_1, x, 19, 21, 2, BLACK))
+        key_sprite_sheet_image_2 = pygame.image.load("./assets/controls/S.png")
+        key_sprite_sheet_2 = Keys(key_sprite_sheet_image_2)
+        for x in range(animation_steps):
+            key_2_list.append(Keys.get_image(key_sprite_sheet_2, x, 19, 21, 2, BLACK))
+        key_sprite_sheet_image_3 = pygame.image.load("./assets/controls/D.png")
+        key_sprite_sheet_3 = Keys(key_sprite_sheet_image_3)
+        for x in range(animation_steps):
+            key_3_list.append(Keys.get_image(key_sprite_sheet_3, x, 19, 21, 2, BLACK))
+        key_sprite_sheet_image_4 = pygame.image.load("./assets/controls/F.png")
+        key_sprite_sheet_4 = Keys(key_sprite_sheet_image_4)
+        for x in range(animation_steps):
+            key_4_list.append(Keys.get_image(key_sprite_sheet_4, x, 19, 21, 2, BLACK))
+        key_sprite_sheet_image_5 = pygame.image.load("./assets/controls/G.png")
+        key_sprite_sheet_5 = Keys(key_sprite_sheet_image_5)
+        for x in range(animation_steps):
+            key_5_list.append(Keys.get_image(key_sprite_sheet_5, x, 19, 21, 2, BLACK))
+        return [key_1_list, key_2_list, key_3_list, key_4_list, key_5_list]
+
+
+class ControlsScreen3:
+    def __init__(self,display,gameStateManager):
+        self.display = display
+        self.gameStateManager = gameStateManager
+    def run(self):
+        global last_update, frame,animation_cooldown
+
+        keys_loaded = (ControlsScreen.load_key_sprite_sheets(self, 3))
+        controls_text = Start.get_font(self,30).render('Controls:', True, WHITE)
+        press_any = Start.get_font(self,20).render('Press ANY KEY to CONTINUE', True, WHITE)
+        button_sfx = pygame.mixer.Sound(BUTTON_PRESS)
+        button_sfx.set_volume(0.3)
+        running = True
+        while running:
+            self.display.fill(SKY_BLUE)
+
+            # update animation
+            current_time = pygame.time.get_ticks()
+            if current_time - last_update >= animation_cooldown:
+                frame += 1
+                last_update = current_time
+                if frame >= 3:
+                    frame = 0
+            self.display.blit(controls_text, (SCREEN_WIDTH//2 - 130, 300))
+            self.display.blit(press_any,(150,SCREEN_HEIGHT-100))
+
+            if len(keys_loaded)>=4:
+                self.display.blit(keys_loaded[0][frame], (SCREEN_WIDTH//2 -100,SCREEN_HEIGHT//2 ))
+                self.display.blit(keys_loaded[1][frame], (SCREEN_WIDTH//2 - 50, SCREEN_HEIGHT//2))
+                self.display.blit(keys_loaded[2][frame], (SCREEN_WIDTH//2 , SCREEN_HEIGHT//2 ))
+                self.display.blit(keys_loaded[3][frame], (SCREEN_WIDTH//2 + 50, SCREEN_HEIGHT//2))
+                self.display.blit(keys_loaded[4][frame],(SCREEN_WIDTH//2 + 100, SCREEN_HEIGHT//2))
+            else:
+                self.display.blit(keys_loaded[0][frame], (SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2))
+                self.display.blit(keys_loaded[1][frame], (SCREEN_WIDTH // 2 - 50, SCREEN_HEIGHT // 2))
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    sound_effect_channel.play(button_sfx)
+                    running = False
+            pygame.display.update()
+        self.gameStateManager.set_state('level 3')
+
+
+
+    def load_key_sprite_sheets(self,level):
+        animation_steps = 3
+        key_1_list = []
+        key_2_list = []
+        key_3_list = []
+        key_4_list = []
+        key_5_list =[]
+
+        key_sprite_sheet_image_1 = pygame.image.load("./assets/controls/H.png")
+        key_sprite_sheet_1 = Keys(key_sprite_sheet_image_1)
+        for x in range(animation_steps):
+            key_1_list.append(Keys.get_image(key_sprite_sheet_1, x, 19, 21, 2, BLACK))
+        key_sprite_sheet_image_2 = pygame.image.load("./assets/controls/J.png")
+        key_sprite_sheet_2 = Keys(key_sprite_sheet_image_2)
+        for x in range(animation_steps):
+            key_2_list.append(Keys.get_image(key_sprite_sheet_2, x, 19, 21, 2, BLACK))
+        key_sprite_sheet_image_3 = pygame.image.load("./assets/controls/K.png")
+        key_sprite_sheet_3 = Keys(key_sprite_sheet_image_3)
+        for x in range(animation_steps):
+            key_3_list.append(Keys.get_image(key_sprite_sheet_3, x, 19, 21, 2, BLACK))
+        key_sprite_sheet_image_4 = pygame.image.load("./assets/controls/L.png")
+        key_sprite_sheet_4 = Keys(key_sprite_sheet_image_4)
+        for x in range(animation_steps):
+            key_4_list.append(Keys.get_image(key_sprite_sheet_4, x, 19, 21, 2, BLACK))
+        key_sprite_sheet_image_5 = pygame.image.load("./assets/controls/C.png")
+        key_sprite_sheet_5 = Keys(key_sprite_sheet_image_5)
+        for x in range(animation_steps):
+            key_5_list.append(Keys.get_image(key_sprite_sheet_5, x, 19, 21, 2, BLACK))
+        return [key_1_list,key_2_list,key_3_list,key_4_list,key_5_list]
+
+
+
+
+
+
+
+class GameStateManager:
+    def __init__(self,currentState):
+        self.currentState = currentState
+
+    def get_state(self):
+        return self.currentState
+    def set_state(self,state):
+        self.currentState = state
 
 if __name__ == "__main__":
-    game = Game()
-    game.run()
+    gameLoop = GameLoop()
+    gameLoop.run()
