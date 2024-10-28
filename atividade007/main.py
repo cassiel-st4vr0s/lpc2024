@@ -24,16 +24,24 @@ BLACK = (0, 0, 0)
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
+SKY_BLUE = (69,179,224)
 PLATFORM_WIDTH = 150
 PLATFORM_HEIGHT = 40
 PLAYER_SIZE = 30
 GRAVITY = 0.5
 JUMP_SPEED = -10
 VERTICAL_SPACING = 100
+TITLE = 'UP IN THE SKY'
+
+#assets
 FONT = './assets/menu/font.ttf'
-TITLE = 'UNKNOWN!'
 MENU_BUTTON = './assets/menu/menu_rect.png'
 JUMP = pygame.mixer.Sound('./assets/sfx/jump.mp3')
+BG_MENU = './assets/menu/bg_castle.jpg'
+BG_MUSIC = pygame.mixer.Sound('./assets/sfx/bg_music.mp3')
+BUTTON_PRESS = pygame.mixer.Sound('./assets/sfx/button.mp3')
+MISS = pygame.mixer.Sound('./assets/sfx/miss.mp3')
+
 
 #animation
 last_update = pygame.time.get_ticks()
@@ -143,7 +151,6 @@ class Level_1:
                 min_spacing = VERTICAL_SPACING - 20
                 if prev_platform.y - y < min_spacing:
                     y = prev_platform.y - min_spacing
-            
             platforms.append(Platform(x, y, text))
         
         return platforms
@@ -184,7 +191,7 @@ class Level_1:
                     if target_platform.is_text_match():
                         target_platform.completed = True
                         self.target_platform_idx = current_idx + 1
-                        
+
                         if self.target_platform_idx < len(self.platforms):
                             # find the next uncompleted platform
                             while (self.target_platform_idx < len(self.platforms) and 
@@ -194,12 +201,14 @@ class Level_1:
                             if self.target_platform_idx < len(self.platforms):
                                 next_platform = self.platforms[self.target_platform_idx]
                                 self.player.jump_to_platform(next_platform)
+                                sound_effect_channel.play(JUMP)
                             else:
                                 self.won = True
                         else:
                             self.won = True
                     elif len(target_platform.typed) >= len(target_platform.text):
                         target_platform.typed = ""
+                        sound_effect_channel.play(MISS)
 
     def update(self):
         self.player.update()
@@ -217,7 +226,7 @@ class Level_1:
             self.game_over = True
 
     def draw(self):
-        self.display.fill(BLACK)
+        self.display.fill(SKY_BLUE)
 
         for i, platform in enumerate(self.platforms):
             color = GREEN if platform.completed else WHITE
@@ -237,10 +246,10 @@ class Level_1:
 
         if self.game_over:
             text = self.font.render("Game Over! Press R to restart", True, WHITE)
-            self.screen.blit(text, (SCREEN_WIDTH//2 - 150, SCREEN_HEIGHT//2))
+            self.display.blit(text, (SCREEN_WIDTH//2 - 150, SCREEN_HEIGHT//2))
         elif self.won:
             text = self.font.render("You Won! Press R to restart", True, WHITE)
-            self.screen.blit(text, (SCREEN_WIDTH//2 - 150, SCREEN_HEIGHT//2))
+            self.display.blit(text, (SCREEN_WIDTH//2 - 150, SCREEN_HEIGHT//2))
 
         pygame.display.flip()
 
@@ -254,7 +263,7 @@ class Level_1:
                     sys.exit()
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_r and (self.game_over or self.won):
-                        self.__init__()
+                        self.__init__(self.display,self.gameStateManager)
                     else:
                         self.handle_input(event)
 
@@ -274,14 +283,23 @@ class Start:
         return pygame.font.Font(FONT, size)
 
     def run(self):
+        global background_channel
         pygame.display.set_caption("Main Menu")
         running = True
+        bg = pygame.image.load(BG_MENU)
+        bg = pygame.transform.scale_by(bg, 0.7)
+        background_channel.play(BG_MUSIC,loops=-1)
+        BG_MUSIC.set_volume(0.2)
+
+        BUTTON_PRESS.set_volume(0.3)
+
         while running:
-            self.display.blit(self.display, (0, 0))
+            self.display.fill(SKY_BLUE)
+            self.display.blit(bg, (0,100))
 
             menu_mouse_pos = pygame.mouse.get_pos()
-            menu_text = Start.get_font(self, 25).render(TITLE, True, WHITE)
-            menu_rect = menu_text.get_rect(center=(SCREEN_WIDTH // 2, 100))
+            menu_text = Start.get_font(self, 36).render(TITLE, True, GRAY)
+            menu_rect = menu_text.get_rect(center=(SCREEN_WIDTH //2, 100))
             image = pygame.image.load(MENU_BUTTON)
             start_game = Button(image=pygame.transform.scale(image, (370, 80)),
                                 pos=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2),
@@ -300,7 +318,7 @@ class Start:
                     sys.exit()
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if start_game.check_for_input(menu_mouse_pos):
-                        print("APERTOU")
+                        sound_effect_channel.play(BUTTON_PRESS)
                         running = False
 
 
@@ -315,13 +333,16 @@ class ControlsScreen:
     def run(self):
         global last_update, frame,animation_cooldown
 
-        self.display.fill(BLACK)
+        bg = pygame.image.load(BG_MENU)
         keys_loaded = (ControlsScreen.load_key_sprite_sheets(self, 1))
         controls_text = Start.get_font(self,30).render('Controls:', True, WHITE)
         press_any = Start.get_font(self,20).render('Press ANY KEY to CONTINUE', True, WHITE)
-
+        button_sfx = pygame.mixer.Sound(BUTTON_PRESS)
+        button_sfx.set_volume(0.3)
         running = True
         while running:
+            self.display.fill(SKY_BLUE)
+
             # update animation
             current_time = pygame.time.get_ticks()
             if current_time - last_update >= animation_cooldown:
@@ -329,7 +350,7 @@ class ControlsScreen:
                 last_update = current_time
                 if frame >= 3:
                     frame = 0
-            self.display.blit(controls_text, (SCREEN_WIDTH//2 - 100, 300))
+            self.display.blit(controls_text, (SCREEN_WIDTH//2 - 130, 300))
             self.display.blit(press_any,(150,SCREEN_HEIGHT-100))
             self.display.blit(keys_loaded[0][frame], (SCREEN_WIDTH//2-100,SCREEN_HEIGHT//2 ))
             self.display.blit(keys_loaded[1][frame], (SCREEN_WIDTH//2 + 50, SCREEN_HEIGHT//2))
@@ -339,6 +360,7 @@ class ControlsScreen:
                     pygame.quit()
                     sys.exit()
                 if event.type == pygame.KEYDOWN:
+                    sound_effect_channel.play(button_sfx)
                     running = False
             pygame.display.update()
         self.gameStateManager.set_state('level 1')
