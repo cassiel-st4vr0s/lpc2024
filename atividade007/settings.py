@@ -1,6 +1,8 @@
 import pygame
+import sys
 
 # Defining audio channels
+pygame.mixer.init()
 background_channel = pygame.mixer.Channel(0)
 sound_effect_channel = pygame.mixer.Channel(1)
 
@@ -33,3 +35,8 @@ BG_MENU = './assets/menu/bg_castle.jpg'
 BG_MUSIC = pygame.mixer.Sound('./assets/sfx/bg_music.mp3')
 BUTTON_PRESS = pygame.mixer.Sound('./assets/sfx/button.mp3')
 MISS = pygame.mixer.Sound('./assets/sfx/miss.mp3')
+
+#animation
+last_update = pygame.time.get_ticks()
+frame = 0
+animation_cooldown = 300

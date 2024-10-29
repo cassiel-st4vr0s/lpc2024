@@ -1,12 +1,9 @@
 import pygame
 from classes.gameloop import *
-
+import sys
 pygame.init()
 
-#animation
-last_update = pygame.time.get_ticks()
-frame = 0
-animation_cooldown = 300
+
 
 #variables
 combinations_size = 2 #controla a quantidade maxima de elementos agrupados
