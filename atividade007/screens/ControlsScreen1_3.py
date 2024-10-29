@@ -1,6 +1,6 @@
 import pygame
 import sys
-from lpc2024.atividade007.lpc2024.atividade007.settings import *
+from settings import *
 from screens.start import Start
 from models.keys import Keys
 
