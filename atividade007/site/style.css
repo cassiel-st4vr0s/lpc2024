@@ -80,9 +80,7 @@ a{
 
 /* Showcase Area */
 #showcase{
-    background: url('../img/img2.jpg') no-repeat
-    center center/cover;
-    height: 600px;
+    height: 550px;
     color: #fff;
 }
 
@@ -117,7 +115,7 @@ a{
  }
 
  .about h3{
-    width: 150%;
+    width: 100%;
     border-bottom: 2px solid  #ddd;
  }
 
@@ -162,6 +160,16 @@ a{
  #Levels h2{
   margin-bottom: 25px;
  }
+
+ .button-container {
+    text-align: center; /* Centraliza os botões */
+    margin-top: 20px; /* Adiciona espaço acima dos botões */
+}
+
+.button-container .btn {
+    margin: 10px 80px; /* Adiciona espaço entre os botões */
+    width: 50%;
+}
 
 /* Footer */
 #main-footer{
