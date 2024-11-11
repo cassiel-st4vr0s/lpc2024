@@ -57,4 +57,4 @@ class Start:
 
             pygame.display.update()
         level = 1
-        self.gameStateManager.set_state('level 2')
+        self.gameStateManager.set_state('main menu')
