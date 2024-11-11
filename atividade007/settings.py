@@ -17,18 +17,18 @@ RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 SKY_BLUE = (69,179,224)
 PLATFORM_WIDTH = 100
-PLATFORM_HEIGHT = 20
+PLATFORM_HEIGHT = 30
 PLAYER_SIZE = 15
 GRAVITY = 0.5
 JUMP_SPEED = -10
 VERTICAL_SPACING = 80
-MAX_COMBINATIONS = 8
+MAX_COMBINATIONS = 9
 
 #assets
 FONT = './assets/menu/font.ttf'
 MENU_BUTTON = './assets/menu/menu_rect.png'
 TITLE = 'UP IN THE SKY'
-FONT_SIZE = 30
+LETTER_SIZE = 45
 JUMP = pygame.mixer.Sound('./assets/sfx/jump.mp3')
 BG_MENU = './assets/menu/castle.png'
 BG_MUSIC = pygame.mixer.Sound('./assets/sfx/bg_music.mp3')

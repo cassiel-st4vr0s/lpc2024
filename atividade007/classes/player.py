@@ -1,5 +1,6 @@
 import pygame
-from settings import PLAYER_SIZE, GRAVITY, SCREEN_HEIGHT, PLATFORM_WIDTH,SCREEN_WIDTH
+from settings import PLAYER_SIZE, GRAVITY, SCREEN_HEIGHT, PLATFORM_WIDTH, SCREEN_WIDTH
+from settings import *
 import sys
 sys.path.append("..")
 
@@ -13,6 +14,8 @@ class Player:
         self.jumping = False
         self.rect = pygame.Rect(x, y, PLAYER_SIZE, PLAYER_SIZE)
         self.display = display
+        self.character = pygame.image.load('assets/sprites/wizard.png')
+        self.character = pygame.transform.scale(self.character, (PLAYER_SIZE + 50, PLAYER_SIZE + 50))
 
     def update(self):
 
@@ -37,6 +40,7 @@ class Player:
         self.x = platform.x + (PLATFORM_WIDTH // 2) - (PLAYER_SIZE // 2)
         self.rect.x = self.x
         self.vel_y = 0
+
 
 
 

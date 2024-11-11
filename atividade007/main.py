@@ -1,6 +1,5 @@
 import pygame
 from classes.gameloop import *
-
 pygame.init()
 
 #variables

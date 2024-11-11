@@ -1,4 +1,5 @@
 import pygame
+from classes import player, platform
 from settings import *
 from classes.player import *
 import random
@@ -7,15 +8,19 @@ from classes.platform import *
 import sys
 from main import combinations_size, letters_3
 
+
 class Level_3:
-    def __init__(self, display, gameStateManager):
+    def __init__(self, display, gameStateManager, player_class, platform_class):
         self.display = display
         pygame.display.set_caption("Typing Game - Phase 3")
         self.clock = pygame.time.Clock()
-        self.font = pygame.font.Font(None, 36)
+        self.font = pygame.font.Font(None, LETTER_SIZE)
         self.player = Player(self.display,SCREEN_WIDTH // 2, SCREEN_HEIGHT - PLAYER_SIZE)
+        self.platform = (Platform(0, 0, 'ola'))
         self.platforms = self.create_platforms()
         self.target_platform_idx = 0
+        self.player_class = player
+        self.platform_class = platform
         self.game_over = False
         self.won = False
         self.gameStateManager = gameStateManager
@@ -134,9 +139,14 @@ class Level_3:
         self.display.fill(SKY_BLUE)
         self.display.blit(self.background, (0, 0))
 
-        for i, platform in enumerate(self.platforms):
-            color = GREEN if platform.completed else WHITE
-            pygame.draw.rect(self.display, color, platform.rect)
+        for i, platform in enumerate(self.platforms) :
+            self.display.blit(self.platform.platform_typeA, (platform.x - 9, platform.y - 30))
+            if platform.completed :
+                outline_coordinates = []
+                for pixel in self.platform.outline_pixels :
+                    point = (pixel[0] + platform.x - 10, platform.y + pixel[1] - 30)
+                    outline_coordinates.append(point)
+                pygame.draw.polygon(self.display, (0, 255, 0), outline_coordinates, 5)
 
             text_surface = self.font.render(platform.text, True, BLACK)
             text_rect = text_surface.get_rect(
@@ -146,10 +156,11 @@ class Level_3:
             current_idx = self.find_current_platform()
             if i == current_idx and not platform.completed:
                 typed_surface = self.font.render(platform.typed, True, BLUE)
-                typed_rect = typed_surface.get_rect(center=(platform.x + PLATFORM_WIDTH / 2, platform.y - 25))
+                typed_rect = typed_surface.get_rect(midleft=(platform.rect.right + 10, platform.rect.centery))
                 self.display.blit(typed_surface, typed_rect)
 
         pygame.draw.rect(self.display, RED, self.player.rect)
+        self.display.blit(self.player.character, (self.player.x - 25, self.player.y - 30))
 
         if self.game_over:
             text = self.font.render("Game Over! Press R to restart", True, BLACK)
@@ -163,13 +174,13 @@ class Level_3:
 
     def run(self):
         running = True
-        time = 20
-        pygame.time.set_timer(pygame.USEREVENT, 1000)
+        time = 30
+        pygame.time.set_timer(pygame.USEREVENT,1000)
         screen = self.background
         timer_text = self.font.render(f"{time}", True, BLACK)
-        timer_text_rect = pygame.Rect(100, 100, 30, 30)
-        timer_text_rect.center = (100, 100)
-        pygame.draw.rect(screen, WHITE, timer_text_rect)
+        timer_text_rect = pygame.Rect(40,50,40,35)
+        timer_text_rect.center = (40,40)
+        pygame.draw.rect(screen,WHITE,timer_text_rect)
         while running:
             if time <= 0:
                 self.game_over = True
