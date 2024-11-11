@@ -7,7 +7,8 @@ from classes.platform import *
 import sys
 from main import combinations_size, letters_1
 
-from atividade007.settings import PLATFORM_WIDTH, PLATFORM_HEIGHT, MAX_COMBINATIONS
+from settings import PLATFORM_WIDTH, PLATFORM_HEIGHT, MAX_COMBINATIONS, explosion_group,SCREEN_WIDTH,sound_effect_channel,button_sfx,SKY_BLUE
+
 
 
 class Level_1:
@@ -16,7 +17,7 @@ class Level_1:
         pygame.display.set_caption("Typing Game - Phase 1")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 36)
-        self.player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT - PLAYER_SIZE)
+        self.player = Player(self.display,SCREEN_WIDTH // 2, SCREEN_HEIGHT - PLAYER_SIZE)
         self.platforms = self.create_platforms()
         self.target_platform_idx = 0
         self.game_over = False
@@ -116,6 +117,9 @@ class Level_1:
                     elif len(target_platform.typed) >= len(target_platform.text):
                         target_platform.typed = ""
                         sound_effect_channel.play(MISS)
+                if pygame.key.get_pressed()[pygame.K_BACKSPACE]:
+                    target_platform.typed = ""
+
 
     def update(self):
         self.player.update()
@@ -153,9 +157,11 @@ class Level_1:
         pygame.draw.rect(self.display, RED, self.player.rect)
 
         if self.game_over:
-            text = self.font.render("Game Over! Press R to restart", True, WHITE)
+            text = self.font.render("Game Over! Press R to restart", True, BLACK)
             self.display.blit(text, (SCREEN_WIDTH//2 - 150, SCREEN_HEIGHT//2))
+
         elif self.won:
+            sound_effect_channel.play(CORRECT)
 
             text = self.font.render("You Won! Press R to proceed!", True, BLACK)
             self.display.blit(text, (SCREEN_WIDTH//2 - 150, SCREEN_HEIGHT//2))
@@ -164,21 +170,65 @@ class Level_1:
 
     def run(self):
         running = True
+        time = 20
+        pygame.time.set_timer(pygame.USEREVENT,1000)
+        screen = self.background
+        timer_text = self.font.render(f"{time}", True, BLACK)
+        timer_text_rect = pygame.Rect(100,100,30,30)
+        timer_text_rect.center = (100,100)
+        pygame.draw.rect(screen,WHITE,timer_text_rect)
+
         while running:
+            if time <=0:
+                self.game_over = True
+                running = False
+                break
+            pygame.draw.rect(screen, WHITE, timer_text_rect)
+            timer_text = self.font.render(f"{time}", True, BLACK)
+            screen.blit(timer_text,timer_text_rect)
             for event in pygame.event.get():
+                if event.type == pygame.USEREVENT:
+                    time -=1
                 if event.type == pygame.QUIT:
                     running = False
                     pygame.quit()
                     sys.exit()
                 elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_r and (self.game_over or self.won):
+
+                    if event.key == pygame.K_r and self.game_over:
+                        self.game_over = False
+                        self.won = False
+                        running = False
+                        break
+                    elif event.key == pygame.K_r and self.won:
+                        sound_effect_channel.play(button_sfx)
+                        self.won = False
+                        self.game_over = False
+                        running = False
+                        break
+                    elif event.key == pygame.K_SPACE:
+                        self.game_over = True
                         running = False
                         break
                     else:
                         self.handle_input(event)
-            self.gameStateManager.set_state('controls screen 2')
 
             if not self.game_over and not self.won:
                 self.update()
+
+
             self.draw()
             self.clock.tick(FPS)
+        if self.game_over:
+            self.player = Player(self.display, SCREEN_WIDTH // 2, SCREEN_HEIGHT - PLAYER_SIZE)
+            self.platforms = self.create_platforms()
+            self.target_platform_idx = 0
+            self.gameStateManager.set_state('controls screen')
+            self.game_over = False
+            running = True
+        else:
+            self.gameStateManager.set_state('controls screen 2')
+
+
+
+

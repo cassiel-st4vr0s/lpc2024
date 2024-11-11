@@ -1,5 +1,4 @@
 import pygame
-import sys
 
 # Defining audio channels
 pygame.mixer.init()
@@ -35,8 +34,12 @@ BG_MENU = './assets/menu/castle.png'
 BG_MUSIC = pygame.mixer.Sound('./assets/sfx/bg_music.mp3')
 BUTTON_PRESS = pygame.mixer.Sound('./assets/sfx/button.mp3')
 MISS = pygame.mixer.Sound('./assets/sfx/miss.mp3')
+CORRECT = pygame.mixer.Sound('./assets/sfx/correct.mp3')
+button_sfx = pygame.mixer.Sound(BUTTON_PRESS)
+button_sfx.set_volume(0.3)
 
 #animation
 last_update = pygame.time.get_ticks()
 frame = 0
 animation_cooldown = 300
+explosion_group = pygame.sprite.Group

@@ -1,16 +1,21 @@
 import pygame
-from settings import PLAYER_SIZE, GRAVITY, SCREEN_HEIGHT, PLATFORM_WIDTH
+from settings import PLAYER_SIZE, GRAVITY, SCREEN_HEIGHT, PLATFORM_WIDTH,SCREEN_WIDTH
+import sys
+sys.path.append("..")
+
 
 class Player:
-    def __init__(self, x, y):
+    def __init__(self,display, x, y):
         self.x = x
         self.y = y
         self.target_y = y
         self.vel_y = 0
         self.jumping = False
         self.rect = pygame.Rect(x, y, PLAYER_SIZE, PLAYER_SIZE)
+        self.display = display
 
     def update(self):
+
         if self.jumping:
             if abs(self.y - self.target_y) > 2:
                 self.y += (self.target_y - self.y) * 0.1
@@ -32,3 +37,8 @@ class Player:
         self.x = platform.x + (PLATFORM_WIDTH // 2) - (PLAYER_SIZE // 2)
         self.rect.x = self.x
         self.vel_y = 0
+
+
+
+
+

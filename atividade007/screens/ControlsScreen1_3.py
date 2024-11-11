@@ -4,7 +4,7 @@ from settings import *
 from screens.start import Start
 from models.keys import Keys
 
-from atividade007.settings import SCREEN_WIDTH, SCREEN_HEIGHT
+from settings import SCREEN_WIDTH, SCREEN_HEIGHT
 
 
 class ControlsScreen:
@@ -23,7 +23,6 @@ class ControlsScreen:
         button_sfx.set_volume(0.3)
         running = True
         while running:
-            self.display.fill(SKY_BLUE)
             self.display.blit(background,(0,0))
 
             # update animation
@@ -45,6 +44,7 @@ class ControlsScreen:
             else:
                 self.display.blit(keys_loaded[0][frame], (SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2))
                 self.display.blit(keys_loaded[1][frame], (SCREEN_WIDTH // 2 - 50, SCREEN_HEIGHT // 2))
+                self.display.blit(keys_loaded[2][frame], (SCREEN_WIDTH // 2 , SCREEN_HEIGHT // 2))
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -64,6 +64,7 @@ class ControlsScreen:
         key_3_list = []
         key_4_list = []
         key_5_list =[]
+        key_6_list = []
         if level == 1:
             key_sprite_sheet_image_1 = pygame.image.load("./assets/controls/F.png")
             key_sprite_sheet_1 = Keys(key_sprite_sheet_image_1)
@@ -73,7 +74,11 @@ class ControlsScreen:
             key_sprite_sheet_2 = Keys(key_sprite_sheet_image_2)
             for x in range(animation_steps):
                 key_2_list.append(Keys.get_image(key_sprite_sheet_2, x, 19, 21, 2, BLACK))
-            return [key_1_list,key_2_list]
+            key_sprite_sheet_image_3 = pygame.image.load("./assets/controls/BACKSPACE.png")
+            key_sprite_sheet_3 = Keys(key_sprite_sheet_image_3)
+            for x in range(animation_steps):
+                key_3_list.append(Keys.get_image(key_sprite_sheet_3,x,53,21,2,BLACK))
+            return [key_1_list,key_2_list,key_3_list]
 
         elif level == 2:
             key_sprite_sheet_image_1 = pygame.image.load("./assets/controls/A.png")
@@ -96,7 +101,11 @@ class ControlsScreen:
             key_sprite_sheet_5 = Keys(key_sprite_sheet_image_5)
             for x in range(animation_steps):
                 key_5_list.append(Keys.get_image(key_sprite_sheet_5, x, 19, 21, 2, BLACK))
-            return [key_1_list, key_2_list, key_3_list, key_4_list, key_5_list]
+            key_sprite_sheet_image_6 = pygame.image.load("./assets/controls/BACKSPACE.png")
+            key_sprite_sheet_6 = Keys(key_sprite_sheet_image_6)
+            for x in range(animation_steps):
+                key_6_list.append(Keys.get_image(key_sprite_sheet_6, x, 53, 21, 2, BLACK))
+            return [key_1_list, key_2_list, key_3_list, key_4_list, key_5_list,key_6_list]
 
         elif level == 3:
             key_sprite_sheet_image_1 = pygame.image.load("./assets/controls/H.png")
@@ -119,7 +128,11 @@ class ControlsScreen:
             key_sprite_sheet_5 = Keys(key_sprite_sheet_image_5)
             for x in range(animation_steps):
                 key_5_list.append(Keys.get_image(key_sprite_sheet_5, x, 19, 21, 2, BLACK))
-            return [key_1_list,key_2_list,key_3_list,key_4_list,key_5_list]
+            key_sprite_sheet_image_6 = pygame.image.load("./assets/controls/BACKSPACE.png")
+            key_sprite_sheet_6 = Keys(key_sprite_sheet_image_6)
+            for x in range(animation_steps):
+                key_6_list.append(Keys.get_image(key_sprite_sheet_6, x, 53, 21, 2, BLACK))
+            return [key_1_list, key_2_list, key_3_list, key_4_list, key_5_list, key_6_list]
         else:
             key_sprite_sheet_image_1 = pygame.image.load("./assets/controls/N.png")
             key_sprite_sheet_1 = Keys(key_sprite_sheet_image_1)
@@ -173,6 +186,7 @@ class ControlsScreen2:
                 self.display.blit(keys_loaded[2][frame], (SCREEN_WIDTH//2 , SCREEN_HEIGHT//2 ))
                 self.display.blit(keys_loaded[3][frame], (SCREEN_WIDTH//2 + 50, SCREEN_HEIGHT//2))
                 self.display.blit(keys_loaded[4][frame],(SCREEN_WIDTH//2 + 100, SCREEN_HEIGHT//2))
+                self.display.blit(keys_loaded[5][frame],(SCREEN_WIDTH//2+150,SCREEN_HEIGHT//2))
             else:
                 self.display.blit(keys_loaded[0][frame], (SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2))
                 self.display.blit(keys_loaded[1][frame], (SCREEN_WIDTH // 2 - 50, SCREEN_HEIGHT // 2))
@@ -194,6 +208,7 @@ class ControlsScreen2:
         key_3_list = []
         key_4_list = []
         key_5_list =[]
+        key_6_list = []
 
         key_sprite_sheet_image_1 = pygame.image.load("./assets/controls/A.png")
         key_sprite_sheet_1 = Keys(key_sprite_sheet_image_1)
@@ -215,8 +230,11 @@ class ControlsScreen2:
         key_sprite_sheet_5 = Keys(key_sprite_sheet_image_5)
         for x in range(animation_steps):
             key_5_list.append(Keys.get_image(key_sprite_sheet_5, x, 19, 21, 2, BLACK))
-        return [key_1_list, key_2_list, key_3_list, key_4_list, key_5_list]
-
+        key_sprite_sheet_image_6 = pygame.image.load("./assets/controls/BACKSPACE.png")
+        key_sprite_sheet_6 = Keys(key_sprite_sheet_image_6)
+        for x in range(animation_steps):
+            key_6_list.append(Keys.get_image(key_sprite_sheet_6, x, 53, 21, 2, BLACK))
+        return [key_1_list, key_2_list, key_3_list, key_4_list, key_5_list, key_6_list]
 class ControlsScreen3:
     def __init__(self,display,gameStateManager):
         self.display = display
@@ -252,6 +270,7 @@ class ControlsScreen3:
                 self.display.blit(keys_loaded[2][frame], (SCREEN_WIDTH//2 , SCREEN_HEIGHT//2 ))
                 self.display.blit(keys_loaded[3][frame], (SCREEN_WIDTH//2 + 50, SCREEN_HEIGHT//2))
                 self.display.blit(keys_loaded[4][frame],(SCREEN_WIDTH//2 + 100, SCREEN_HEIGHT//2))
+                self.display.blit(keys_loaded[5][frame],(SCREEN_WIDTH//2 + 150,SCREEN_HEIGHT//2))
             else:
                 self.display.blit(keys_loaded[0][frame], (SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2))
                 self.display.blit(keys_loaded[1][frame], (SCREEN_WIDTH // 2 - 50, SCREEN_HEIGHT // 2))
@@ -273,6 +292,7 @@ class ControlsScreen3:
         key_3_list = []
         key_4_list = []
         key_5_list =[]
+        key_6_list = []
 
         key_sprite_sheet_image_1 = pygame.image.load("./assets/controls/H.png")
         key_sprite_sheet_1 = Keys(key_sprite_sheet_image_1)
@@ -294,4 +314,8 @@ class ControlsScreen3:
         key_sprite_sheet_5 = Keys(key_sprite_sheet_image_5)
         for x in range(animation_steps):
             key_5_list.append(Keys.get_image(key_sprite_sheet_5, x, 19, 21, 2, BLACK))
-        return [key_1_list,key_2_list,key_3_list,key_4_list,key_5_list]
+        key_sprite_sheet_image_6 = pygame.image.load("./assets/controls/BACKSPACE.png")
+        key_sprite_sheet_6 = Keys(key_sprite_sheet_image_6)
+        for x in range(animation_steps):
+            key_6_list.append(Keys.get_image(key_sprite_sheet_6, x, 53, 21, 2, BLACK))
+        return [key_1_list, key_2_list, key_3_list, key_4_list, key_5_list, key_6_list]

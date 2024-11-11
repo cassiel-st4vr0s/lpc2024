@@ -3,7 +3,7 @@ import sys
 from settings import *
 from button import Button
 
-from atividade007.settings import SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
+from settings import SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
 
 
 class Start:
@@ -57,4 +57,4 @@ class Start:
 
             pygame.display.update()
         level = 1
-        self.gameStateManager.set_state('controls screen')
+        self.gameStateManager.set_state('level 2')

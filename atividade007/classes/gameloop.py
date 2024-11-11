@@ -3,11 +3,11 @@ import sys
 from levels.level1 import *
 from levels.level2 import *
 from levels.level3 import *
+from pygame import MOUSEBUTTONDOWN
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT
 from classes.gamestate_manager import GameStateManager
 from screens.start import Start
 from screens.ControlsScreen1_3 import ControlsScreen, ControlsScreen2, ControlsScreen3
-
 class GameLoop:
     def __init__(self):
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -31,5 +31,6 @@ class GameLoop:
                     running = False
                     pygame.quit()
                     sys.exit()
+
             self.states[self.gameStateManager.get_state()].run()
             pygame.display.update()
