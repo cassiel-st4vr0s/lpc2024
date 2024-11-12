@@ -7,7 +7,6 @@ from itertools import product
 from classes.platform import *
 import sys
 from main import combinations_size, letters_1
-
 from settings import PLATFORM_WIDTH, PLATFORM_HEIGHT, MAX_COMBINATIONS, explosion_group,SCREEN_WIDTH,sound_effect_channel,button_sfx,SKY_BLUE
 
 
@@ -29,6 +28,7 @@ class Level_1:
         self.gameStateManager = gameStateManager
         self.background = pygame.image.load("assets/sprites/background.png")
         self.background = pygame.transform.scale(self.background, (SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.initial_time = pygame.time.get_ticks()
 
     def sequence_generator(self): #função que controla a criação das sequencias das letras
         platform_texts = []
@@ -240,8 +240,11 @@ class Level_1:
             self.game_over = False
             running = True
         else:
+
             self.gameStateManager.set_state('controls screen 2')
 
+    def get_initial_time(self):
+        return self.initial_time
 
 
 

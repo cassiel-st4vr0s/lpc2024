@@ -228,5 +228,7 @@ class Level_3:
                 self.gameStateManager.set_state('controls screen 3')
                 self.game_over = False
                 running = True
-            else:
-                self.gameStateManager.set_state('controls screen 3')
+            elif self.won:
+                self.gameStateManager.set_state('end')
+
+

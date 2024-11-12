@@ -42,7 +42,7 @@ class ControlsScreen:
                 self.display.blit(keys_loaded[3][frame], (SCREEN_WIDTH//2 + 50, SCREEN_HEIGHT//2))
                 self.display.blit(keys_loaded[4][frame],(SCREEN_WIDTH//2 + 100, SCREEN_HEIGHT//2))
             else:
-                self.display.blit(keys_loaded[0][frame], (SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2))
+                self.display.blit(keys_loaded[0][frame],(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2))
                 self.display.blit(keys_loaded[1][frame], (SCREEN_WIDTH // 2 - 50, SCREEN_HEIGHT // 2))
                 self.display.blit(keys_loaded[2][frame], (SCREEN_WIDTH // 2 , SCREEN_HEIGHT // 2))
 

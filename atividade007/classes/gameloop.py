@@ -6,6 +6,7 @@ from levels.level3 import *
 from pygame import MOUSEBUTTONDOWN
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT
 from screens.start import Start
+from screens.end import End
 from screens.ControlsScreen1_3 import ControlsScreen, ControlsScreen2, ControlsScreen3
 from classes import player, platform
 from classes.player import *
@@ -26,8 +27,9 @@ class GameLoop:
         self.level_1 = Level_1(self.screen,self.gameStateManager,self.player_class,self.platform_class)
         self.level_2 = Level_2(self.screen,self.gameStateManager, self.player_class,self.platform_class)
         self.level_3 = Level_3(self.screen,self.gameStateManager, self.player_class,self.platform_class)
+        self.end = End(self.screen, self.gameStateManager)
         self.states = {'main menu': self.start, 'controls screen': self.controlsScreen, 'level 1': self.level_1,'level 2':self.level_2,
-                       'level 3':self.level_3,'controls screen 2':self.controlsScreen2,'controls screen 3':self.controlsScreen3}
+                       'level 3':self.level_3,'controls screen 2':self.controlsScreen2,'controls screen 3':self.controlsScreen3, 'end': self.end}
 
     def run(self):
         running = True
