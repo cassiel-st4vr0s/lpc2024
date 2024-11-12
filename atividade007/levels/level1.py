@@ -232,18 +232,23 @@ class Level_1:
             self.draw()
             self.clock.tick(FPS)
         if self.game_over:
-            self.player = Player(self.display, SCREEN_WIDTH // 2, SCREEN_HEIGHT - PLAYER_SIZE)
-            self.platforms = self.create_platforms()
-            self.target_platform_idx = 0
+            self.reset_level()
             self.gameStateManager.set_state('controls screen')
-            self.game_over = False
-            running = True
         else:
-
+            self.reset_level()
             self.gameStateManager.set_state('controls screen 2')
 
     def get_initial_time(self):
         return self.initial_time
+
+    def reset_level(self):
+        self.player = Player(self.display, SCREEN_WIDTH // 2, SCREEN_HEIGHT - PLAYER_SIZE)
+        self.platforms = self.create_platforms()
+        self.target_platform_idx = 0
+        self.game_over = False
+        self.won = False
+        running = True
+
 
 
 

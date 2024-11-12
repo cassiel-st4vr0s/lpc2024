@@ -27,7 +27,7 @@ class GameLoop:
         self.level_1 = Level_1(self.screen,self.gameStateManager,self.player_class,self.platform_class)
         self.level_2 = Level_2(self.screen,self.gameStateManager, self.player_class,self.platform_class)
         self.level_3 = Level_3(self.screen,self.gameStateManager, self.player_class,self.platform_class)
-        self.end = End(self.screen, self.gameStateManager)
+        self.end = End(self.screen, self.gameStateManager,self.level_1)
         self.states = {'main menu': self.start, 'controls screen': self.controlsScreen, 'level 1': self.level_1,'level 2':self.level_2,
                        'level 3':self.level_3,'controls screen 2':self.controlsScreen2,'controls screen 3':self.controlsScreen3, 'end': self.end}
 

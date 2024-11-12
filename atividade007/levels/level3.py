@@ -167,10 +167,8 @@ class Level_3:
             text = self.font.render("Game Over! Press R to restart", True, BLACK)
             self.display.blit(text, (SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2))
         elif self.won:
-            sound_effect_channel.play(CORRECT)
-            text = self.font.render("You Won! Press R to restart", True, BLACK)
-            self.display.blit(text, (SCREEN_WIDTH//2 - 18, SCREEN_HEIGHT - 60))
-
+            text = self.font.render("WIN!",True,BLACK)
+            self.display.blit(text, (SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2))
         pygame.display.flip()
 
     def run(self):
@@ -204,9 +202,9 @@ class Level_3:
                         self.won = False
                         running = False
                         break
-                    elif event.key == pygame.K_r and self.won:
+                    elif event.key == pygame.K_p and self.won:
                         sound_effect_channel.play(CORRECT)
-                        self.won = False
+                        self.won = True
                         self.game_over = False
                         running = False
                         break
@@ -223,15 +221,17 @@ class Level_3:
             self.draw()
             self.clock.tick(FPS)
             if self.game_over:
-                self.player = Player(self.display, SCREEN_WIDTH // 2, SCREEN_HEIGHT - PLAYER_SIZE)
-                self.platforms = self.create_platforms()
-                self.target_platform_idx = 0
+                self.reset_level()
                 self.gameStateManager.set_state('controls screen 3')
-                self.game_over = False
-                running = True
             elif self.won:
+                self.reset_level()
+                break
+        self.gameStateManager.set_state('end')
 
-
-                self.gameStateManager.set_state('end')
-
-
+    def reset_level(self):
+        self.player = Player(self.display, SCREEN_WIDTH // 2, SCREEN_HEIGHT - PLAYER_SIZE)
+        self.platforms = self.create_platforms()
+        self.target_platform_idx = 0
+        self.game_over = False
+        self.won = False
+        running = True
