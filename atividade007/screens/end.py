@@ -2,15 +2,15 @@ import pygame
 import sys
 from settings import *
 from button import Button
-from levels.level1 import Level_1
 
-from settings import SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
+from settings import SCREEN_HEIGHT, SCREEN_WIDTH, WHITE,BLUE
 
 
 class End:
-    def __init__(self,display,gameStateManager):
+    def __init__(self,display,gameStateManager,Level_1):
         self.display = display
         self.gameStateManager = gameStateManager
+        self.Level_1 = Level_1
 
     def get_font(self, size):
         return pygame.font.Font(FONT, size)
@@ -23,17 +23,19 @@ class End:
         bg = pygame.transform.scale(bg,(SCREEN_WIDTH,SCREEN_HEIGHT))
         background_channel.play(BG_MUSIC,loops=-1)
         BG_MUSIC.set_volume(0.2)
-
         BUTTON_PRESS.set_volume(0.3)
+
+        current_time = pygame.time.get_ticks()
+        total_time = current_time - self.Level_1.get_initial_time()
 
         while running:
             self.display.fill(SKY_BLUE)
             self.display.blit(bg, (0,0))
 
             menu_mouse_pos = pygame.mouse.get_pos()
-            menu_text = End.get_font(self, 36).render(TITLE, True, WHITE)
+            menu_text = End.get_font(self, 36).render(TITLE, True, BLUE)
             menu_rect = menu_text.get_rect(center=(SCREEN_WIDTH //2, 100))
-            time_text = End.get_font(self, 20).render("CONGRATULATIONS!! YOU GOT TO THE SKY!! ", True, BLACK)
+            time_text = End.get_font(self, 15).render(f"SUCCESS!! You've gotten to the sky in {total_time//1000} seconds! ", True, BLUE)
             time_text_rect = time_text.get_rect(center =(SCREEN_WIDTH//2,200))
             image = pygame.image.load(MENU_BUTTON)
             pygame.Surface.convert_alpha(image)

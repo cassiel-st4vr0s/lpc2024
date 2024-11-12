@@ -7,7 +7,7 @@ from itertools import product
 from classes.platform import *
 import sys
 from main import combinations_size, letters_1
-from settings import PLATFORM_WIDTH, PLATFORM_HEIGHT, MAX_COMBINATIONS, explosion_group,SCREEN_WIDTH,sound_effect_channel,button_sfx,SKY_BLUE
+from settings import CORRECT,PLATFORM_WIDTH, PLATFORM_HEIGHT, MAX_COMBINATIONS, explosion_group,SCREEN_WIDTH,sound_effect_channel,button_sfx,SKY_BLUE
 
 
 
@@ -173,14 +173,13 @@ class Level_1:
             self.display.blit(text, (SCREEN_WIDTH//2 - 150, SCREEN_HEIGHT//2))
 
         elif self.won:
-            sound_effect_channel.play(CORRECT)
-
             text = self.font.render("You Won! Press P to proceed!", True, BLACK)
             self.display.blit(text, (SCREEN_WIDTH//2 - 18, SCREEN_HEIGHT - 60))
 
         pygame.display.flip()
 
     def run(self):
+        Level_1.get_initial_time(self)
         running = True
         time = 30
         pygame.time.set_timer(pygame.USEREVENT,1000)
@@ -213,13 +212,13 @@ class Level_1:
                         running = False
                         break
                     elif event.key == pygame.K_p and self.won:
-                        sound_effect_channel.play(button_sfx)
+                        sound_effect_channel.play(CORRECT)
                         self.won = False
                         self.game_over = False
                         running = False
                         break
                     elif event.key == pygame.K_SPACE:
-                        self.game_over = True
+                        self.won = True
                         running = False
                         break
                     else:

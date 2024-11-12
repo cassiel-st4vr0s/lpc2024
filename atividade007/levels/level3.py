@@ -7,6 +7,7 @@ from itertools import product
 from classes.platform import *
 import sys
 from main import combinations_size, letters_3
+from levels.level1 import Level_1
 
 
 class Level_3:
@@ -204,13 +205,13 @@ class Level_3:
                         running = False
                         break
                     elif event.key == pygame.K_r and self.won:
-                        sound_effect_channel.play(button_sfx)
+                        sound_effect_channel.play(CORRECT)
                         self.won = False
                         self.game_over = False
                         running = False
                         break
                     elif event.key == pygame.K_SPACE:
-                        self.game_over = True
+                        self.won = True
                         running = False
                         break
                     else:
@@ -229,6 +230,8 @@ class Level_3:
                 self.game_over = False
                 running = True
             elif self.won:
+
+
                 self.gameStateManager.set_state('end')
 
 

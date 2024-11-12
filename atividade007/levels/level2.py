@@ -168,7 +168,6 @@ class Level_2:
             text = self.font.render("Game Over! Press R to restart", True, BLACK)
             self.display.blit(text, (SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2))
         elif self.won:
-            sound_effect_channel.play(CORRECT)
             text = self.font.render("You Won! Press P to proceed", True, BLACK)
             self.display.blit(text, (SCREEN_WIDTH//2 - 18, SCREEN_HEIGHT - 60))
 
@@ -207,13 +206,13 @@ class Level_2:
                         running = False
                         break
                     elif event.key == pygame.K_p and self.won:
-                        sound_effect_channel.play(button_sfx)
+                        sound_effect_channel.play(CORRECT)
                         self.won = False
                         self.game_over = False
                         running = False
                         break
                     elif event.key == pygame.K_SPACE:
-                        self.game_over = True
+                        self.won= True
                         running = False
                         break
                     else:
@@ -231,5 +230,5 @@ class Level_2:
                 self.gameStateManager.set_state('controls screen 2')
                 self.game_over = False
                 running = True
-            else:
+            elif self.won:
                 self.gameStateManager.set_state('controls screen 3')
