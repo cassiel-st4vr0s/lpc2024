@@ -36,8 +36,8 @@ class Start:
             pygame.Surface.convert_alpha(image)
             start_game = Button(image=pygame.transform.scale(image, (370, 80)),
                                 pos=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2),
-                                text_input="PLAY", font=Start.get_font(self, 25), base_color=BLACK,
-                                hovering_color=GRAY)
+                                text_input="PLAY", font=Start.get_font(self, 25), base_color=BLUE,
+                                hovering_color=WHITE)
 
             self.display.blit(menu_text, menu_rect)
 

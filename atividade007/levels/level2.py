@@ -169,8 +169,8 @@ class Level_2:
             self.display.blit(text, (SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2))
         elif self.won:
             sound_effect_channel.play(CORRECT)
-            text = self.font.render("You Won! Press R to proceed", True, BLACK)
-            self.display.blit(text, (SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2))
+            text = self.font.render("You Won! Press P to proceed", True, BLACK)
+            self.display.blit(text, (SCREEN_WIDTH//2 - 18, SCREEN_HEIGHT - 60))
 
         pygame.display.flip()
 
@@ -206,7 +206,7 @@ class Level_2:
                         self.won = False
                         running = False
                         break
-                    elif event.key == pygame.K_r and self.won:
+                    elif event.key == pygame.K_p and self.won:
                         sound_effect_channel.play(button_sfx)
                         self.won = False
                         self.game_over = False

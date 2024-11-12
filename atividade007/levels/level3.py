@@ -168,13 +168,13 @@ class Level_3:
         elif self.won:
             sound_effect_channel.play(CORRECT)
             text = self.font.render("You Won! Press R to restart", True, BLACK)
-            self.display.blit(text, (SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2))
+            self.display.blit(text, (SCREEN_WIDTH//2 - 18, SCREEN_HEIGHT - 60))
 
         pygame.display.flip()
 
     def run(self):
         running = True
-        time = 30
+        time = 35
         pygame.time.set_timer(pygame.USEREVENT,1000)
         screen = self.background
         timer_text = self.font.render(f"{time}", True, BLACK)

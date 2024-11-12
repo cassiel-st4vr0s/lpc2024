@@ -4,9 +4,6 @@ from settings import *
 from screens.start import Start
 from models.keys import Keys
 
-from settings import SCREEN_WIDTH, SCREEN_HEIGHT
-
-
 class ControlsScreen:
     def __init__(self,display,gameStateManager):
         self.display = display
