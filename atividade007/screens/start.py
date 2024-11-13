@@ -58,4 +58,4 @@ class Start:
 
             pygame.display.update()
         level = 1
-        self.gameStateManager.set_state('level 3')
+        self.gameStateManager.set_state('controls screen')
