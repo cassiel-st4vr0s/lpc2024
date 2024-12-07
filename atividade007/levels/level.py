@@ -6,60 +6,60 @@ import random
 from itertools import product
 from classes.platform import *
 import sys
-from main import combinations_size, letters_3
-from levels.level1 import Level_1
+from main import combinations_size, letters_1
+from settings import CORRECT, PLATFORM_WIDTH, PLATFORM_HEIGHT, MAX_COMBINATIONS, explosion_group, SCREEN_WIDTH, \
+    sound_effect_channel, button_sfx, SKY_BLUE, LETTER_SIZE
 
 
-class Level_3:
+class Level:
     def __init__(self, display, gameStateManager):
         self.display = display
         pygame.font.init()
-        pygame.display.set_caption("Typing Game - Phase 3")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, LETTER_SIZE)
-        self.player = Player(self.display,SCREEN_WIDTH // 2, SCREEN_HEIGHT - PLAYER_SIZE)
+        pygame.display.set_caption("Typing Game - Phase 1")
+        self.player = Player(self.display, SCREEN_WIDTH // 2, SCREEN_HEIGHT - PLAYER_SIZE)
         self.platform = (Platform(0, 0, 'ola'))
         self.platforms = self.create_platforms()
         self.target_platform_idx = 0
-        self.player_class = player
-        self.platform_class = platform
         self.game_over = False
         self.won = False
         self.gameStateManager = gameStateManager
         self.background = pygame.image.load("assets/sprites/background.png")
         self.background = pygame.transform.scale(self.background, (SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.initial_time = pygame.time.get_ticks()
 
-    def sequence_generator(self): #função que controla a criação das sequencias das letras
+    def sequence_generator(self):  # função que controla a criação das sequencias das letras
         platform_texts = []
-        for size in range(1, combinations_size + 1): #limita o numero maximo de elementos
-            for word in product(letters_3, repeat = size):
+        for size in range(1, combinations_size + 1):  # limita o numero maximo de elementos
+            for word in product(letters_1, repeat=size):
                 platform_texts.append("".join(word))
 
         return platform_texts
 
-    def create_platforms(self) :
+    def create_platforms(self):
         platforms = []
         platform_texts = self.sequence_generator()
         random.shuffle(platform_texts)
         print(platform_texts)
 
         base_y = SCREEN_HEIGHT - 100
-        for i, text in enumerate(platform_texts) :
+        for i, text in enumerate(platform_texts):
             y = base_y - (i * VERTICAL_SPACING)
             x = random.randint(50, SCREEN_WIDTH - PLATFORM_WIDTH - 50)
 
-            if i == 0 :  # posiciona o player na primeira plataforma
+            if i == 0:  # posiciona o player na primeira plataforma
                 self.player.x = x + (PLATFORM_WIDTH // 2) - (PLAYER_SIZE // 2)
                 self.player.y = y
 
-            if i > 0 :
+            if i > 0:
                 prev_platform = platforms[i - 1]
                 min_spacing = VERTICAL_SPACING - 20
-                if prev_platform.y - y < min_spacing :
+                if prev_platform.y - y < min_spacing:
                     y = prev_platform.y - min_spacing
 
-                if i == MAX_COMBINATIONS :
-                    break
+            if i == MAX_COMBINATIONS:
+                break
             platforms.append(Platform(x, y, text))
 
         return platforms
@@ -94,13 +94,12 @@ class Level_3:
                 current_idx = self.find_current_platform()
                 target_platform = self.platforms[current_idx]
 
-                if event.unicode in letters_3:
+                if event.unicode in letters_1:
                     target_platform.typed += event.unicode
 
                     if target_platform.is_text_match():
                         target_platform.completed = True
                         self.target_platform_idx = current_idx + 1
-
                         if self.target_platform_idx < len(self.platforms):
                             # find the next uncompleted platform
                             while (self.target_platform_idx < len(self.platforms) and
@@ -121,7 +120,6 @@ class Level_3:
                 if pygame.key.get_pressed()[pygame.K_BACKSPACE]:
                     target_platform.typed = ""
 
-
     def update(self):
         self.player.update()
 
@@ -133,19 +131,19 @@ class Level_3:
                     self.player.y = platform.rect.top - PLAYER_SIZE
                     self.player.vel_y = 0
                     self.player.current_platform = platform
-
-        if self.player.y > SCREEN_HEIGHT:
+        # condição de game over
+        if self.player.rect.bottom >= SCREEN_HEIGHT - PLAYER_SIZE:
             self.game_over = True
 
     def draw(self):
         self.display.fill(SKY_BLUE)
         self.display.blit(self.background, (0, 0))
 
-        for i, platform in enumerate(self.platforms) :
+        for i, platform in enumerate(self.platforms):
             self.display.blit(self.platform.platform_typeA, (platform.x - 9, platform.y - 30))
-            if platform.completed :
+            if platform.completed:
                 outline_coordinates = []
-                for pixel in self.platform.outline_pixels :
+                for pixel in self.platform.outline_pixels:
                     point = (pixel[0] + platform.x - 10, platform.y + pixel[1] - 30)
                     outline_coordinates.append(point)
                 pygame.draw.polygon(self.display, (0, 255, 0), outline_coordinates, 5)
@@ -167,20 +165,24 @@ class Level_3:
         if self.game_over:
             text = self.font.render("Game Over! Press R to restart", True, BLACK)
             self.display.blit(text, (SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2))
+
         elif self.won:
-            text = self.font.render("WIN!",True,BLACK)
-            self.display.blit(text, (SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2))
+            text = self.font.render("You Won! Press P to proceed!", True, BLACK)
+            self.display.blit(text, (SCREEN_WIDTH // 2 - 18, SCREEN_HEIGHT - 60))
+
         pygame.display.flip()
 
     def run(self):
+        Level_1.get_initial_time(self)
         running = True
-        time = 35
-        pygame.time.set_timer(pygame.USEREVENT,1000)
+        time = 30
+        pygame.time.set_timer(pygame.USEREVENT, 1000)
         screen = self.background
         timer_text = self.font.render(f"{time}", True, BLACK)
-        timer_text_rect = pygame.Rect(40,50,40,35)
-        timer_text_rect.center = (40,40)
-        pygame.draw.rect(screen,WHITE,timer_text_rect)
+        timer_text_rect = pygame.Rect(40, 50, 40, 35)
+        timer_text_rect.center = (40, 40)
+        pygame.draw.rect(screen, WHITE, timer_text_rect)
+
         while running:
             if time <= 0:
                 self.game_over = True
@@ -205,7 +207,7 @@ class Level_3:
                         break
                     elif event.key == pygame.K_p and self.won:
                         sound_effect_channel.play(CORRECT)
-                        self.won = True
+                        self.won = False
                         self.game_over = False
                         running = False
                         break
@@ -215,19 +217,22 @@ class Level_3:
                         break
                     else:
                         self.handle_input(event)
+            self.gameStateManager.set_state('controls screen 2')
 
             if not self.game_over and not self.won:
                 self.update()
 
             self.draw()
             self.clock.tick(FPS)
-            if self.game_over:
-                self.reset_level()
-                self.gameStateManager.set_state('controls screen 3')
-            elif self.won:
-                self.reset_level()
-                break
-        self.gameStateManager.set_state('end')
+        if self.game_over:
+            self.reset_level()
+            self.gameStateManager.set_state('controls screen')
+        else:
+            self.reset_level()
+            self.gameStateManager.set_state('controls screen 2')
+
+    def get_initial_time(self):
+        return self.initial_time
 
     def reset_level(self):
         self.player = Player(self.display, SCREEN_WIDTH // 2, SCREEN_HEIGHT - PLAYER_SIZE)
@@ -236,3 +241,7 @@ class Level_3:
         self.game_over = False
         self.won = False
         running = True
+
+
+
+

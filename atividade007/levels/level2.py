@@ -12,8 +12,9 @@ from main import combinations_size, letters_2
 
 
 class Level_2:
-    def __init__(self, display, gameStateManager, player_class,platform_class):
+    def __init__(self, display, gameStateManager):
         self.display = display
+        pygame.font.init()
         pygame.display.set_caption("Typing Game - Phase 2")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, LETTER_SIZE)

@@ -7,22 +7,21 @@ from itertools import product
 from classes.platform import *
 import sys
 from main import combinations_size, letters_1
-from settings import CORRECT,PLATFORM_WIDTH, PLATFORM_HEIGHT, MAX_COMBINATIONS, explosion_group,SCREEN_WIDTH,sound_effect_channel,button_sfx,SKY_BLUE
+from settings import CORRECT,PLATFORM_WIDTH, PLATFORM_HEIGHT, MAX_COMBINATIONS, explosion_group,SCREEN_WIDTH,sound_effect_channel,button_sfx,SKY_BLUE,LETTER_SIZE
 
 
 
 class Level_1:
-    def __init__(self,display,gameStateManager,player_class, platform_class):
+    def __init__(self,display,gameStateManager):
         self.display = display
-        pygame.display.set_caption("Typing Game - Phase 1")
+        pygame.font.init()
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, LETTER_SIZE)
+        pygame.display.set_caption("Typing Game - Phase 1")
         self.player = Player(self.display,SCREEN_WIDTH // 2, SCREEN_HEIGHT - PLAYER_SIZE)
         self.platform = (Platform(0,0, 'ola'))
         self.platforms = self.create_platforms()
         self.target_platform_idx = 0
-        self.player_class = player
-        self.platform_class = platform
         self.game_over = False
         self.won = False
         self.gameStateManager = gameStateManager
@@ -33,7 +32,7 @@ class Level_1:
     def sequence_generator(self): #função que controla a criação das sequencias das letras
         platform_texts = []
         for size in range(1, combinations_size + 1): #limita o numero maximo de elementos
-            for word in product(letters_1, repeat = size):
+            for word in product(letters, repeat = size):
                 platform_texts.append("".join(word))
 
         return platform_texts

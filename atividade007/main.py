@@ -1,6 +1,4 @@
-import pygame
 from classes.gameloop import *
-pygame.init()
 
 #variables
 combinations_size = 4 #controla a quantidade maxima de elementos agrupados
