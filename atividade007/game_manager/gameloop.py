@@ -8,9 +8,7 @@ from settings import SCREEN_WIDTH, SCREEN_HEIGHT
 from screens.start import Start
 from screens.end import End
 from screens.ControlsScreen1_3 import ControlsScreen, ControlsScreen2, ControlsScreen3
-from classes.player import *
-from classes.platform import *
-from classes.gamestate_manager import GameStateManager
+from game_manager.gamestate_manager import GameStateManager
 
 
 class GameLoop:

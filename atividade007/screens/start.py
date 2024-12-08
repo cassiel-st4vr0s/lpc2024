@@ -1,7 +1,7 @@
 import pygame
 import sys
 from settings import *
-from button import Button
+from models.button import Button
 
 from settings import SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
 

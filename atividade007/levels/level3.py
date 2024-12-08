@@ -1,12 +1,11 @@
 import pygame
-from classes import player, platform
 from settings import *
-from classes.player import *
+from models.player import *
 import random
 from itertools import product
-from classes.platform import *
+from models.platform import *
 import sys
-from main import combinations_size, letters_3
+from settings import combinations_size, letters_3
 from levels.level1 import Level_1
 
 
@@ -21,8 +20,6 @@ class Level_3:
         self.platform = (Platform(0, 0, 'ola'))
         self.platforms = self.create_platforms()
         self.target_platform_idx = 0
-        self.player_class = player
-        self.platform_class = platform
         self.game_over = False
         self.won = False
         self.gameStateManager = gameStateManager
