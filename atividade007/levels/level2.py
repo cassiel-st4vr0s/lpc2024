@@ -11,7 +11,7 @@ from settings import combinations_size, letters_2
 
 
 class Level_2:
-    def __init__(self, display, gameStateManager, player_class,platform_class):
+    def __init__(self, display, gameStateManager):
         self.display = display
         pygame.display.set_caption("Typing Game - Phase 2")
         self.clock = pygame.time.Clock()

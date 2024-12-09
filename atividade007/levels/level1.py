@@ -3,7 +3,7 @@ from models.platform import *
 from models.player import *
 import random
 from itertools import product
-from classes.platform import *
+from models.platform import *
 import sys
 from settings import combinations_size, letters_1
 from settings import CORRECT,PLATFORM_WIDTH, PLATFORM_HEIGHT, MAX_COMBINATIONS, explosion_group,SCREEN_WIDTH,sound_effect_channel,button_sfx,SKY_BLUE,LETTER_SIZE

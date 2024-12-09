@@ -10,7 +10,7 @@ from levels.level1 import Level_1
 
 
 class Level_3:
-    def __init__(self, display, gameStateManager, player_class, platform_class):
+    def __init__(self, display, gameStateManager):
         self.display = display
         pygame.display.set_caption("Typing Game - Phase 3")
         self.clock = pygame.time.Clock()
